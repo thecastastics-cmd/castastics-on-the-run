@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Castastics On The Run</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; color: white; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; }
         #gameUI { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; }
-        #menu { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; }
+        #menu { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; }
         .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 45vh; overflow-y: scroll; padding: 10px; border: 2px solid #333; background: #111; width: 90%; border-radius: 10px; }
         .char-card { border: 2px solid #444; padding: 8px; text-align: center; border-radius: 8px; background: #222; font-size: 10px; }
-        .char-card img { width: 50px; height: 50px; display: block; margin: 0 auto; object-fit: contain; background: #333; }
+        .char-card img { width: 50px; height: 50px; display: block; margin: 0 auto; object-fit: contain; }
         .char-card.selected { border-color: #00ff00; background: #004400; }
-        .locked { opacity: 0.5; filter: grayscale(1); }
         button { padding: 18px 50px; font-size: 22px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; }
     </style>
 </head>
@@ -20,15 +19,16 @@
 
 <div id="gameUI">
     <div style="color: #ffd700; font-size: 24px;">🪙 <span id="coinCount">0</span></div>
-    <div style="font-size: 14px; opacity: 0.8;">SCORE: <span id="score">0</span></div>
-    <div id="powerNotify" style="color:#00ffff; font-weight:bold;"></div>
+    <div>SCORE: <span id="score">0</span></div>
+    <div id="powerNotify" style="color:#00ffff; font-weight:bold; height: 20px;"></div>
 </div>
 
 <div id="menu">
-    <h1 style="margin:0; color:#00ff00; font-style: italic;">CASTASTICS</h1>
-    <div style="color:#ffd700; margin: 10px 0;">Bank: 🪙 <span id="totalCoins">0</span></div>
+    <h1 style="color:#00ff00;">CASTASTICS</h1>
+    <div style="color:#ffd700; margin-bottom:10px;">Bank: 🪙 <span id="totalCoins">0</span></div>
     <div class="char-grid" id="charGrid"></div>
     <button onclick="startGame()">RUN!</button>
+    <p style="font-size: 10px; margin-top: 10px; opacity: 0.6;">Music will start when you press RUN</p>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -37,11 +37,11 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    // Asset Loading
     const assets = {
         road: new Image(), magnet: new Image(), shield: new Image(), 
         multiplier: new Image(), obsLow: new Image(), obsHigh: new Image()
     };
-    // Attempt to load your images
     assets.road.src = 'images/road.png';
     assets.magnet.src = 'images/magnet.png';
     assets.shield.src = 'images/shield.png';
@@ -49,22 +49,26 @@
     assets.obsLow.src = 'images/obstacle_low.png';
     assets.obsHigh.src = 'images/obstacle_high.png';
 
-    let gameState = 'menu', score = 0, coins = 0, totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
-    let currentLane = 1, speed = 8, entities = [], powerTimer = 0, activePower = null;
-    let playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
+    // Audio Loading
+    const sounds = {
+        bg: new Audio('images/bg_music.mp3'),
+        magnet: new Audio('images/powerup_magnet.mp3'),
+        shield: new Audio('images/powerup_shield.mp3'),
+        multiplier: new Audio('images/powerup_multiplier.mp3'),
+        death: new Audio('images/death.mp3')
+    };
+    sounds.bg.loop = true;
+
+    let gameState = 'menu', score = 0, coins = 0;
+    let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
+    let currentLane = 1, visualLane = 1, speed = 8, entities = [], powerTimer = 0, activePower = null;
+    let playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0, tilt = 0;
 
     let characters = [];
     for(let i=1; i<=105; i++){
         let img = new Image();
         img.src = `images/casta${i}.png`;
-        // This is the fallback: if image is missing, it marks 'loaded' as false
-        characters.push({ 
-            id: i, 
-            img: img, 
-            cost: i===1 ? 0 : i*100, 
-            unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true',
-            color: `hsl(${(i * 45) % 360}, 70%, 60%)` 
-        });
+        characters.push({ id: i, img: img, cost: i===1 ? 0 : i*100, unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', color: `hsl(${i*30}, 70%, 50%)` });
     }
     let selectedChar = characters[0];
 
@@ -75,11 +79,7 @@
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${!c.unlocked?'locked':''} ${selectedChar.id===c.id?'selected':''}`;
-            // Use the image if it exists, otherwise show a colored square in the shop
-            card.innerHTML = `<div style="width:50px; height:50px; background:${c.color}; margin:0 auto; border-radius:5px;">
-                                <img src="${c.img.src}" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'">
-                              </div>
-                              <div>${c.unlocked?'CHOOSE':'🪙'+c.cost}</div>`;
+            card.innerHTML = `<div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;"><img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'"></div><div>${c.unlocked?'CHOOSE':'🪙'+c.cost}</div>`;
             card.onclick = () => {
                 if(c.unlocked){ selectedChar = c; initMenu(); }
                 else if(totalCoins >= c.cost){
@@ -95,13 +95,18 @@
 
     function startGame() {
         document.getElementById('menu').style.display = 'none';
-        score = 0; coins = 0; entities = []; currentLane = 1; speed = 8;
-        powerTimer = 0; activePower = null; playerJumpVal = 0; isSliding = false; playerYOffset = 0;
+        score = 0; coins = 0; entities = []; currentLane = 1; visualLane = 1; speed = 8;
+        powerTimer = 0; activePower = null; playerJumpVal = 0; isSliding = false;
+        
+        // Start Background Music
+        sounds.bg.currentTime = 0;
+        sounds.bg.play().catch(e => console.log("Audio waiting for user interaction"));
+        
         gameState = 'playing';
         update();
     }
 
-    // Touch Controls
+    // Input Handling
     let tStart = {x:0, y:0};
     window.addEventListener('touchstart', e => { tStart.x = e.touches[0].clientX; tStart.y = e.touches[0].clientY; });
     window.addEventListener('touchend', e => {
@@ -109,96 +114,97 @@
         let dx = e.changedTouches[0].clientX - tStart.x;
         let dy = e.changedTouches[0].clientY - tStart.y;
         if(Math.abs(dx) > Math.abs(dy)){
-            if(dx > 35 && currentLane < 2) currentLane++;
-            if(dx < -35 && currentLane > 0) currentLane--;
+            if(dx > 40 && currentLane < 2) currentLane++;
+            if(dx < -40 && currentLane > 0) currentLane--;
         } else {
-            if(dy < -35 && playerJumpVal === 0) playerJumpVal = 17; // JUMP
-            if(dy > 35) { isSliding = true; slideTimer = 35; } // SLIDE
+            if(dy < -40 && playerJumpVal === 0) playerJumpVal = 18; 
+            if(dy > 40) { isSliding = true; slideTimer = 40; } 
         }
     });
+
+    function playPowerSound(type) {
+        if(sounds[type.toLowerCase()]) {
+            sounds[type.toLowerCase()].currentTime = 0;
+            sounds[type.toLowerCase()].play();
+        }
+    }
 
     function update() {
         if(gameState !== 'playing') return;
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
-        // Draw Road (Placeholder if image missing)
-        if(assets.road.complete && assets.road.width > 0) {
-            ctx.drawImage(assets.road, 0, 0, canvas.width, canvas.height);
-        } else {
-            ctx.fillStyle = '#222'; ctx.fillRect(0,0,canvas.width, canvas.height);
-            ctx.strokeStyle = '#444';
-            ctx.lineWidth = 5;
-            for(let i=1; i<3; i++) { 
-                ctx.beginPath(); ctx.moveTo(i*canvas.width/3, 0); ctx.lineTo(i*canvas.width/3, canvas.height); ctx.stroke(); 
-            }
-        }
+        if(assets.road.complete && assets.road.width > 0) ctx.drawImage(assets.road, 0, 0, canvas.width, canvas.height);
+        else { ctx.fillStyle = '#222'; ctx.fillRect(0,0,canvas.width, canvas.height); }
 
-        // Jump & Slide Physics
+        visualLane += (currentLane - visualLane) * 0.2; 
+        tilt = (currentLane - visualLane) * 0.5;
+
         if(playerJumpVal > 0 || playerYOffset < 0){
             playerYOffset -= playerJumpVal;
-            playerJumpVal -= 0.9;
+            playerJumpVal -= 1;
             if(playerYOffset > 0) { playerYOffset = 0; playerJumpVal = 0; }
         }
         if(isSliding) { slideTimer--; if(slideTimer <= 0) isSliding = false; }
 
-        // Spawn Items
-        if(score % 35 === 0) {
+        if(score % 30 === 0) {
             let lane = Math.floor(Math.random()*3);
             let r = Math.random();
             let type = r > 0.96 ? 'magnet' : (r > 0.92 ? 'shield' : (r > 0.88 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsLow' : 'obsHigh'))));
-            entities.push({ lane, y: -100, type });
+            entities.push({ lane, x: lane * (canvas.width/3) + (canvas.width/6) - 20, y: -100, type });
         }
 
         entities.forEach((en, i) => {
             en.y += speed;
-            let laneWidth = canvas.width / 3;
-            let x = en.lane * laneWidth + (laneWidth / 2) - 25;
-            
-            if(en.type === 'coin') { 
-                if(activePower === 'MAGNET') { x += ( (currentLane * laneWidth + (laneWidth/2) - 25) - x) * 0.3; }
-                ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(x+25, en.y+25, 18, 0, Math.PI*2); ctx.fill(); 
-            } else if(en.type.startsWith('obs')) {
-                if(assets[en.type].complete && assets[en.type].width > 0) {
-                    ctx.drawImage(assets[en.type], x-15, en.y, 80, 80);
-                } else {
-                    ctx.fillStyle = en.type==='obsLow' ? '#ff4444' : '#ffaa00';
-                    let h = en.type==='obsLow' ? 30 : 80;
-                    ctx.fillRect(x-15, en.y + (en.type==='obsLow'?50:0), 80, h);
-                }
-            } else {
-                if(assets[en.type].complete && assets[en.type].width > 0) ctx.drawImage(assets[en.type], x, en.y, 50, 50);
-                else { ctx.fillStyle = '#00ffff'; ctx.fillRect(x, en.y, 50, 50); }
+            if(activePower === 'MAGNET' && en.type === 'coin') {
+                let targetX = visualLane * (canvas.width/3) + (canvas.width/6) - 20;
+                en.x += (targetX - en.x) * 0.25;
             }
 
-            // Collision
-            let pY = canvas.height-160 + playerYOffset;
-            if(en.lane === currentLane && en.y > pY - 50 && en.y < pY + 70) {
-                if(en.type === 'coin') { coins += (activePower === 'MULTIPLIER' ? 2 : 1); entities.splice(i, 1); }
-                else if(en.type.startsWith('obs')) {
-                    let canPass = (en.type === 'obsLow' && playerYOffset < -40) || (en.type === 'obsHigh' && isSliding);
+            if(en.type === 'coin') { 
+                ctx.fillStyle = 'gold'; ctx.beginPath(); ctx.arc(en.x+20, en.y+20, 15, 0, Math.PI*2); ctx.fill(); 
+            } else if(en.type.startsWith('obs')) {
+                if(assets[en.type].complete && assets[en.type].width > 0) ctx.drawImage(assets[en.type], en.x-10, en.y, 60, 60);
+                else { ctx.fillStyle = en.type==='obsLow'?'red':'orange'; ctx.fillRect(en.x-10, en.y, 60, en.type==='obsLow'?20:60); }
+            } else {
+                if(assets[en.type].complete) ctx.drawImage(assets[en.type], en.x, en.y, 40, 40);
+                else { ctx.fillStyle = 'cyan'; ctx.fillRect(en.x, en.y, 40, 40); }
+            }
+
+            let pTop = canvas.height-160 + playerYOffset;
+            if(en.lane === currentLane && en.y > pTop - 30 && en.y < pTop + 60) {
+                if(en.type === 'coin') { 
+                    coins += (activePower === 'MULTIPLIER' ? 2 : 1); 
+                    entities.splice(i, 1); 
+                } else if(en.type.startsWith('obs')) {
+                    let canPass = (en.type === 'obsLow' && playerYOffset < -30) || (en.type === 'obsHigh' && isSliding);
                     if(!canPass) {
-                        if(activePower === 'SHIELD') { activePower = null; powerTimer = 0; entities.splice(i, 1); }
-                        else { gameOver(); }
+                        if(activePower === 'SHIELD') { 
+                            activePower = null; powerTimer = 0; entities.splice(i, 1); 
+                        } else { gameOver(); }
                     }
-                } else { activePower = en.type.toUpperCase(); powerTimer = 450; entities.splice(i, 1); }
+                } else { 
+                    activePower = en.type.toUpperCase(); 
+                    powerTimer = 450; 
+                    playPowerSound(en.type); // Trigger Powerup Audio
+                    entities.splice(i, 1); 
+                }
             }
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
-        // Draw Player (Block Placeholder if no Image)
-        let px = currentLane * (canvas.width/3) + (canvas.width/6) - 35;
-        let pHeight = isSliding ? 50 : 100;
-        let py = canvas.height-160 + (isSliding ? 50 : 0) + playerYOffset;
+        // Draw Animated Player
+        let px = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
+        let py = canvas.height-160 + playerYOffset;
+        ctx.save();
+        ctx.translate(px + 35, py + 50);
+        ctx.rotate(tilt);
+        if(isSliding) { ctx.scale(1.2, 0.5); ctx.translate(0, 50); }
+        else if(playerYOffset < 0) { ctx.scale(0.8, 1.2); }
+        if(selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
+        else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
+        ctx.restore();
 
-        if(selectedChar.img.complete && selectedChar.img.width > 0) {
-            ctx.drawImage(selectedChar.img, px, py, 70, pHeight);
-        } else {
-            ctx.fillStyle = selectedChar.color;
-            ctx.fillRect(px, py, 70, pHeight);
-            ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.strokeRect(px, py, 70, pHeight);
-        }
-
-        if(powerTimer > 0) { powerTimer--; document.getElementById('powerNotify').innerText = activePower; }
+        if(powerTimer > 0) { powerTimer--; document.getElementById('powerNotify').innerText = "POWER: " + activePower; }
         else { activePower = null; document.getElementById('powerNotify').innerText = ""; }
 
         score++; speed += 0.001;
@@ -209,6 +215,8 @@
 
     function gameOver() {
         gameState = 'menu';
+        sounds.bg.pause(); // Stop music
+        sounds.death.play(); // Play death sound
         totalCoins += coins;
         localStorage.setItem('casta_bank', totalCoins);
         document.getElementById('menu').style.display = 'flex';
