@@ -22,7 +22,7 @@
     <div style="color: #ffd700; font-size: 28px;">🪙 <span id="coinCount">0</span></div>
     <div style="font-size: 14px; opacity:0.8; color: #00ff00;">BEST: <span id="highScoreDisplay">0</span></div>
     <div style="font-size: 18px;">SCORE: <span id="scoreDisplay">0</span></div>
-    <div id="powerNotify" style="color:#fbff00; font-weight:bold; margin-top:5px; text-shadow: 0 0 5px #000;"></div>
+    <div id="powerNotify" style="font-weight:bold; margin-top:5px; text-shadow: 0 0 5px #000;"></div>
 </div>
 
 <div id="menu">
@@ -107,19 +107,15 @@
         update();
     }
 
-    // --- FIXED TOUCH CONTROLS ---
     let tStart = {x:0, y:0};
     window.addEventListener('touchstart', e => { 
-        tStart.x = e.touches[0].clientX; 
-        tStart.y = e.touches[0].clientY; 
+        tStart.x = e.touches[0].clientX; tStart.y = e.touches[0].clientY; 
     }, {passive: false});
 
     window.addEventListener('touchend', e => {
         if(gameState !== 'playing') return;
         let dx = e.changedTouches[0].clientX - tStart.x;
         let dy = e.changedTouches[0].clientY - tStart.y;
-        
-        // Check if movement was horizontal or vertical
         if(Math.abs(dx) > Math.abs(dy)){
             if(Math.abs(dx) > 30) {
                 if(dx > 0 && currentLane < 2) currentLane++;
@@ -127,18 +123,8 @@
             }
         } else {
             if(Math.abs(dy) > 30) {
-                // Swipe UP to Jump
-                if(dy < 0 && playerYOffset === 0) {
-                    playerJumpVal = 22; // Jump Strength
-                } 
-                // Swipe DOWN to Slide
-                else if(dy > 0) {
-                    isSliding = true;
-                    slideTimer = 35;
-                    if(playerYOffset < 0) { // Fast fall if jumping
-                        playerJumpVal = -15;
-                    }
-                }
+                if(dy < 0 && playerYOffset === 0) playerJumpVal = 22;
+                else if(dy > 0) { isSliding = true; slideTimer = 35; if(playerYOffset < 0) playerJumpVal = -15; }
             }
         }
     }, {passive: false});
@@ -149,6 +135,7 @@
 
         let delta = (timestamp - lastTime) / 1000;
         if(!isNaN(delta)) {
+            // Multiplier doubles the score speed (200/sec)
             let scoreGain = (activePower === 'MULTIPLIER') ? 200 : 100;
             score += scoreGain * delta;
             runCycle += delta * (speed * 1.5);
@@ -159,20 +146,12 @@
         else { ctx.fillStyle = '#111'; ctx.fillRect(0,0,canvas.width, canvas.height); }
 
         visualLane += (currentLane - visualLane) * 0.2; 
-        
-        // --- JUMP PHYSICS ---
         if(playerJumpVal !== 0 || playerYOffset < 0){
-            playerYOffset -= playerJumpVal;
-            playerJumpVal -= 1.2; // Gravity
-            if(playerYOffset > 0) { 
-                playerYOffset = 0; 
-                playerJumpVal = 0; 
-            }
+            playerYOffset -= playerJumpVal; playerJumpVal -= 1.2;
+            if(playerYOffset > 0) { playerYOffset = 0; playerJumpVal = 0; }
         }
-
         if(isSliding) { slideTimer--; if(slideTimer <= 0) isSliding = false; }
 
-        // Spawning
         if(Math.floor(score/10) % 6 === 0 && Math.random() < 0.1) {
             let lane = Math.floor(Math.random()*3);
             let r = Math.random();
@@ -204,8 +183,9 @@
 
             if(dist < 55 && en.y > pTop - 40 && en.y < pTop + 80) {
                 if(en.type === 'coin' || en.type === 'goldCoin') { 
+                    // EXTRA COIN LOGIC: Multiplier adds +2 to standard gain
                     let gain = (en.type === 'goldCoin' ? 50 : 1);
-                    coins += (activePower === 'MULTIPLIER' ? gain * 2 : gain);
+                    coins += (activePower === 'MULTIPLIER' ? gain + 2 : gain);
                     entities.splice(i, 1); 
                 } else if(en.type.startsWith('obs')) {
                     if(!((en.type === 'obsLow' && playerYOffset < -35) || (en.type === 'obsHigh' && isSliding))) {
@@ -221,31 +201,27 @@
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
-        // ANIMATED CHARACTER RENDER
         let px = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
         let py = canvas.height-160 + playerYOffset;
         let bob = Math.sin(runCycle * Math.PI * 2) * 6;
         let stretch = Math.sin(runCycle * Math.PI * 2) * 0.12;
-
         ctx.save();
         ctx.translate(px + 35, py + 50 + bob);
         ctx.rotate((currentLane - visualLane) * 0.3);
-
         if(isSliding) { ctx.scale(1.3, 0.5); ctx.translate(0, 40); }
         else if(playerYOffset < -10) { ctx.scale(0.8, 1.2); }
         else { ctx.scale(1 + stretch, 1 - stretch); }
-
-        if(selectedChar.img.complete && selectedChar.img.width > 0) {
-            ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
-        } else {
-            ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100);
-        }
+        if(selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
+        else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
         ctx.restore();
 
+        const notify = document.getElementById('powerNotify');
         if(powerTimer > 0) { 
             powerTimer--; 
-            document.getElementById('powerNotify').innerText = activePower + " X2!";
-        } else { activePower = null; document.getElementById('powerNotify').innerText = ""; }
+            if(activePower === 'MULTIPLIER') { notify.innerText = "BONUS COINS + SCORE X2"; notify.style.color = "#fbff00"; }
+            else if(activePower === 'SHIELD') { notify.innerText = "SHIELD ACTIVE"; notify.style.color = "#00ffff"; }
+            else if(activePower === 'MAGNET') { notify.innerText = "MAGNET ON"; notify.style.color = "#ff00ff"; }
+        } else { activePower = null; notify.innerText = ""; }
 
         speed += 0.001;
         document.getElementById('coinCount').innerText = coins;
@@ -261,7 +237,6 @@
         document.getElementById('menu').style.display = 'flex';
         initMenu();
     }
-
     window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     initMenu();
