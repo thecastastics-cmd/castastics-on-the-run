@@ -55,12 +55,12 @@
     sounds.bg.loop = true;
     let isMuted = false;
 
-    let gameState = 'menu', score = 0, coins = 0, lastTime = 0;
+    let gameState = 'menu', score = 0, coins = 0;
     let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
     let highScore = parseInt(localStorage.getItem('casta_high')) || 0;
     let currentLane = 1, visualLane = 1, speed = 8, entities = [], powerTimer = 0, activePower = null;
     let playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
-    let runCycle = 0; // Animation tracker
+    let lastTime = 0;
 
     let characters = [];
     for(let i=1; i<=105; i++){
@@ -100,13 +100,14 @@
     function startGame() {
         document.getElementById('menu').style.display = 'none';
         score = 0; coins = 0; entities = []; currentLane = 1; visualLane = 1; speed = 8;
-        powerTimer = 0; activePower = null; runCycle = 0;
+        powerTimer = 0; activePower = null;
         lastTime = performance.now();
         if(!isMuted) { sounds.bg.currentTime = 0; sounds.bg.play().catch(()=>{}); }
         gameState = 'playing';
         update();
     }
 
+    // Controls
     let tStart = {x:0, y:0};
     window.addEventListener('touchstart', e => { tStart.x = e.touches[0].clientX; tStart.y = e.touches[0].clientY; });
     window.addEventListener('touchend', e => {
@@ -126,12 +127,11 @@
         if(gameState !== 'playing') return;
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
-        // 1. Precise 100/sec Score & Animation Timing
+        // Score Ticker: 100/sec base. 200/sec with Multiplier.
         let delta = (timestamp - lastTime) / 1000;
         if(!isNaN(delta)) {
-            let scoreGain = (activePower === 'MULTIPLIER') ? 200 : 100;
+            let scoreGain = activePower === 'MULTIPLIER' ? 200 : 100;
             score += scoreGain * delta;
-            runCycle += delta * (speed * 1.5); // Running speed
         }
         lastTime = timestamp;
 
@@ -145,8 +145,8 @@
         }
         if(isSliding) { slideTimer--; if(slideTimer <= 0) isSliding = false; }
 
-        // Spawning
-        if(Math.floor(score/10) % 6 === 0 && Math.random() < 0.1) {
+        // Spawn logic (based on visual intervals)
+        if(Math.floor(score/10) % 5 === 0 && Math.random() < 0.1) {
             let lane = Math.floor(Math.random()*3);
             let r = Math.random();
             let type = r > 0.98 ? 'goldCoin' : (r > 0.95 ? 'magnet' : (r > 0.92 ? 'shield' : (r > 0.89 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsLow' : 'obsHigh')))));
@@ -160,7 +160,6 @@
                 en.x += (pTargetX - en.x) * 0.45;
             }
 
-            // Draw Items
             if(en.type === 'coin' || en.type === 'goldCoin') { 
                 ctx.fillStyle = en.type === 'goldCoin' ? '#fff700' : '#ffd700';
                 ctx.beginPath(); ctx.arc(en.x+20, en.y+20, en.type==='goldCoin'?22:15, 0, Math.PI*2); ctx.fill(); 
@@ -172,12 +171,11 @@
                 else { ctx.fillStyle = '#00ffff'; ctx.fillRect(en.x, en.y, 45, 45); }
             }
 
-            // Hit Detection
             let pVisualX = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
             let pTop = canvas.height-160 + playerYOffset;
             let dist = Math.abs(en.x - pVisualX);
 
-            if(dist < 55 && en.y > pTop - 40 && en.y < pTop + 80) {
+            if(dist < 50 && en.y > pTop - 40 && en.y < pTop + 80) {
                 if(en.type === 'coin' || en.type === 'goldCoin') { 
                     let gain = (en.type === 'goldCoin' ? 50 : 1);
                     coins += (activePower === 'MULTIPLIER' ? gain * 2 : gain);
@@ -188,7 +186,7 @@
                         else { gameOver(); }
                     }
                 } else { 
-                    activePower = en.type.toUpperCase(); powerTimer = 600;
+                    activePower = en.type.toUpperCase(); powerTimer = 600; // 10 seconds approx
                     if(!isMuted && sounds[en.type.toLowerCase()]) sounds[en.type.toLowerCase()].play();
                     entities.splice(i, 1); 
                 }
@@ -196,25 +194,15 @@
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
-        // 2. ANIMATED CHARACTER RENDER
+        // Player Render
         let px = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
         let py = canvas.height-160 + playerYOffset;
-        let bob = Math.sin(runCycle * Math.PI * 2) * 6; // Bobbing height
-        let stretch = Math.sin(runCycle * Math.PI * 2) * 0.12; // Stretch amount
-
         ctx.save();
-        ctx.translate(px + 35, py + 50 + bob);
-        ctx.rotate((currentLane - visualLane) * 0.3); // Lean into turns
-
-        if(isSliding) { ctx.scale(1.3, 0.5); ctx.translate(0, 40); }
+        ctx.translate(px + 35, py + 50);
+        if(isSliding) { ctx.scale(1.2, 0.5); ctx.translate(0, 50); }
         else if(playerYOffset < -10) { ctx.scale(0.8, 1.2); }
-        else { ctx.scale(1 + stretch, 1 - stretch); } // Running Stretch/Squash
-
-        if(selectedChar.img.complete && selectedChar.img.width > 0) {
-            ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
-        } else {
-            ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100);
-        }
+        if(selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
+        else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
         ctx.restore();
 
         if(powerTimer > 0) { 
@@ -229,10 +217,12 @@
     }
 
     function gameOver() {
-        gameState = 'menu'; sounds.bg.pause();
+        gameState = 'menu';
+        sounds.bg.pause();
         if(!isMuted) sounds.death.play();
         if(score > highScore) { highScore = score; localStorage.setItem('casta_high', highScore); }
-        totalCoins += coins; localStorage.setItem('casta_bank', totalCoins);
+        totalCoins += coins;
+        localStorage.setItem('casta_bank', totalCoins);
         document.getElementById('menu').style.display = 'flex';
         initMenu();
     }
