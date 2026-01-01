@@ -11,23 +11,23 @@
         .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 40vh; overflow-y: scroll; padding: 10px; border: 2px solid #333; background: #111; width: 90%; border-radius: 10px; }
         .char-card { border: 2px solid #444; padding: 8px; text-align: center; border-radius: 8px; background: #222; font-size: 10px; }
         .char-card img { width: 50px; height: 50px; display: block; margin: 0 auto; object-fit: contain; }
-        .char-card.selected { border-color: #00ff00; background: #004400; }
+        .char-card.selected { border-color: #00ff00; background: #004400; box-shadow: 0 0 10px #00ff00; }
         button { padding: 18px 50px; font-size: 22px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; margin-top: 10px; }
-        #muteBtn { position: absolute; bottom: 20px; right: 20px; background: #333; color: white; padding: 10px; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; line-height: 20px; border: none; z-index: 30; cursor: pointer; }
+        #muteBtn { position: absolute; bottom: 20px; right: 20px; background: #333; color: white; padding: 10px; border-radius: 50%; width: 45px; height: 45px; font-size: 20px; border: none; z-index: 30; }
     </style>
 </head>
 <body>
 
 <div id="gameUI">
-    <div style="color: #ffd700; font-size: 24px;">🪙 <span id="coinCount">0</span></div>
-    <div>BEST: <span id="highScore">0</span></div>
-    <div>SCORE: <span id="score">0</span></div>
+    <div style="color: #ffd700; font-size: 28px;">🪙 <span id="coinCount">0</span></div>
+    <div style="font-size: 14px; opacity:0.8; color: #00ff00;">BEST: <span id="highScore">0</span></div>
+    <div style="font-size: 18px;">SCORE: <span id="score">0</span></div>
     <div id="powerNotify" style="color:#00ffff; font-weight:bold; margin-top:5px;"></div>
 </div>
 
 <div id="menu">
-    <h1 style="color:#00ff00; margin: 0;">CASTASTICS</h1>
-    <div style="color:#ffd700; margin-bottom:5px;">Bank: 🪙 <span id="totalCoins">0</span></div>
+    <h1 style="color:#00ff00; margin: 0; font-style: italic; letter-spacing: 2px;">CASTASTICS</h1>
+    <div style="color:#ffd700; margin: 5px 0;">BANK: 🪙 <span id="totalCoins">0</span></div>
     <div class="char-grid" id="charGrid"></div>
     <button onclick="startGame()">RUN!</button>
 </div>
@@ -65,7 +65,7 @@
     for(let i=1; i<=105; i++){
         let img = new Image();
         img.src = `images/casta${i}.png`;
-        characters.push({ id: i, img: img, cost: i===1 ? 0 : i*100, unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', color: `hsl(${i*35}, 70%, 50%)` });
+        characters.push({ id: i, img: img, cost: i===1 ? 0 : i*100, unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', color: `hsl(${i*37}, 70%, 50%)` });
     }
     let selectedChar = characters[0];
 
@@ -73,11 +73,11 @@
         const grid = document.getElementById('charGrid');
         grid.innerHTML = '';
         document.getElementById('totalCoins').innerText = totalCoins;
-        document.getElementById('highScore').innerText = highScore;
+        document.getElementById('highScore').innerText = Math.floor(highScore);
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${!c.unlocked?'locked':''} ${selectedChar.id===c.id?'selected':''}`;
-            card.innerHTML = `<div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;"><img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'"></div><div>${c.unlocked?'READY':'🪙'+c.cost}</div>`;
+            card.innerHTML = `<div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;"><img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'"></div><div>${c.unlocked?'SELECT':'🪙'+c.cost}</div>`;
             card.onclick = () => {
                 if(c.unlocked){ selectedChar = c; initMenu(); }
                 else if(totalCoins >= c.cost){
@@ -92,8 +92,7 @@
     }
 
     function toggleMute() {
-        isMuted = !isMuted;
-        sounds.bg.muted = isMuted;
+        isMuted = !isMuted; sounds.bg.muted = isMuted;
         document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊';
     }
 
@@ -106,6 +105,7 @@
         update();
     }
 
+    // Controls
     let tStart = {x:0, y:0};
     window.addEventListener('touchstart', e => { tStart.x = e.touches[0].clientX; tStart.y = e.touches[0].clientY; });
     window.addEventListener('touchend', e => {
@@ -125,79 +125,94 @@
         if(gameState !== 'playing') return;
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
+        // Background
         if(assets.road.complete && assets.road.width > 0) ctx.drawImage(assets.road, 0, 0, canvas.width, canvas.height);
-        else { ctx.fillStyle = '#222'; ctx.fillRect(0,0,canvas.width, canvas.height); }
+        else { ctx.fillStyle = '#111'; ctx.fillRect(0,0,canvas.width, canvas.height); }
 
         visualLane += (currentLane - visualLane) * 0.2; 
-
         if(playerJumpVal > 0 || playerYOffset < 0){
             playerYOffset -= playerJumpVal; playerJumpVal -= 1;
             if(playerYOffset > 0) { playerYOffset = 0; playerJumpVal = 0; }
         }
         if(isSliding) { slideTimer--; if(slideTimer <= 0) isSliding = false; }
 
-        if(score % 30 === 0) {
+        // Score Ticker: 100 per second (Assuming 60 FPS = ~1.67 per frame)
+        score += 1.67; 
+
+        // Spawn Logic
+        if(Math.floor(score) % 50 === 0) {
             let lane = Math.floor(Math.random()*3);
             let r = Math.random();
-            let type = r > 0.96 ? 'magnet' : (r > 0.92 ? 'shield' : (r > 0.88 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsLow' : 'obsHigh'))));
+            let type = r > 0.98 ? 'goldCoin' : (r > 0.95 ? 'magnet' : (r > 0.92 ? 'shield' : (r > 0.89 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsLow' : 'obsHigh')))));
             entities.push({ lane, x: lane * (canvas.width/3) + (canvas.width/6) - 20, y: -100, type });
         }
 
         entities.forEach((en, i) => {
             en.y += speed;
             
-            // INTENSE MAGNET LOGIC
-            if(activePower === 'MAGNET' && en.type === 'coin') {
-                let pRealX = currentLane * (canvas.width/3) + (canvas.width/6) - 20;
-                // Once coin is in view, pull it aggressively to the player's CURRENT lane
-                en.x += (pRealX - en.x) * 0.35; 
+            // Fixed Multiplier Logic + Magnet
+            if(activePower === 'MAGNET' && (en.type === 'coin' || en.type === 'goldCoin')) {
+                let pTargetX = visualLane * (canvas.width/3) + (canvas.width/6) - 20;
+                en.x += (pTargetX - en.x) * 0.45;
             }
 
-            if(en.type === 'coin') { 
-                ctx.fillStyle = 'gold'; ctx.beginPath(); ctx.arc(en.x+20, en.y+20, 15, 0, Math.PI*2); ctx.fill(); 
+            // Draw
+            if(en.type === 'coin' || en.type === 'goldCoin') { 
+                ctx.fillStyle = en.type === 'goldCoin' ? '#fff700' : '#ffd700';
+                ctx.beginPath(); ctx.arc(en.x+20, en.y+20, en.type==='goldCoin'?22:15, 0, Math.PI*2); ctx.fill(); 
             } else if(en.type.startsWith('obs')) {
-                if(assets[en.type].complete && assets[en.type].width > 0) ctx.drawImage(assets[en.type], en.x-10, en.y, 60, 60);
-                else { ctx.fillStyle = en.type==='obsLow'?'red':'orange'; ctx.fillRect(en.x-10, en.y, 60, en.type==='obsLow'?20:60); }
+                if(assets[en.type].complete && assets[en.type].width > 0) ctx.drawImage(assets[en.type], en.x-15, en.y, 70, 70);
+                else { ctx.fillStyle = en.type==='obsLow'?'red':'orange'; ctx.fillRect(en.x-15, en.y + (en.type==='obsLow'?50:0), 70, en.type==='obsLow'?20:70); }
             } else {
-                if(assets[en.type].complete) ctx.drawImage(assets[en.type], en.x, en.y, 40, 40);
-                else { ctx.fillStyle = 'cyan'; ctx.fillRect(en.x, en.y, 40, 40); }
+                if(assets[en.type].complete) ctx.drawImage(assets[en.type], en.x, en.y, 45, 45);
+                else { ctx.fillStyle = '#00ffff'; ctx.fillRect(en.x, en.y, 45, 45); }
             }
 
+            // Hit Detection
+            let pVisualX = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
             let pTop = canvas.height-160 + playerYOffset;
-            // Check collision against the real lane the player is in
-            if(Math.abs(en.x - (currentLane * (canvas.width/3) + (canvas.width/6) - 20)) < 40 && en.y > pTop - 30 && en.y < pTop + 60) {
-                if(en.type === 'coin') { coins += (activePower === 'MULTIPLIER' ? 2 : 1); entities.splice(i, 1); }
+            let dist = Math.abs(en.x - pVisualX);
+
+            if(dist < 50 && en.y > pTop - 40 && en.y < pTop + 80) {
+                if(en.type === 'coin' || en.type === 'goldCoin') { 
+                    // MULTIPLIER FIX: Multiply the coin gain by 2 if active
+                    let gain = (en.type === 'goldCoin' ? 50 : 1);
+                    coins += (activePower === 'MULTIPLIER' ? gain * 2 : gain);
+                    entities.splice(i, 1); 
+                }
                 else if(en.type.startsWith('obs')) {
-                    if(!((en.type === 'obsLow' && playerYOffset < -30) || (en.type === 'obsHigh' && isSliding))) {
+                    if(!((en.type === 'obsLow' && playerYOffset < -35) || (en.type === 'obsHigh' && isSliding))) {
                         if(activePower === 'SHIELD') { activePower = null; powerTimer = 0; entities.splice(i, 1); }
                         else { gameOver(); }
                     }
                 } else { 
-                    activePower = en.type.toUpperCase(); powerTimer = 450; 
-                    if(!isMuted) sounds[en.type].play();
+                    activePower = en.type.toUpperCase(); powerTimer = 500; 
+                    if(!isMuted && sounds[en.type.toLowerCase()]) sounds[en.type.toLowerCase()].play();
                     entities.splice(i, 1); 
                 }
             }
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
-        // Player
+        // Draw Player
         let px = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
         let py = canvas.height-160 + playerYOffset;
         ctx.save();
         ctx.translate(px + 35, py + 50);
         if(isSliding) { ctx.scale(1.2, 0.5); ctx.translate(0, 50); }
-        else if(playerYOffset < 0) { ctx.scale(0.8, 1.2); }
+        else if(playerYOffset < -10) { ctx.scale(0.8, 1.2); }
         if(selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
         else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
         ctx.restore();
 
-        if(powerTimer > 0) { powerTimer--; document.getElementById('powerNotify').innerText = activePower; }
-        else { activePower = null; document.getElementById('powerNotify').innerText = ""; }
+        if(powerTimer > 0) { 
+            powerTimer--; 
+            document.getElementById('powerNotify').innerText = activePower + " ACTIVE (" + Math.ceil(powerTimer/60) + "s)";
+        } else { activePower = null; document.getElementById('powerNotify').innerText = ""; }
 
-        score++; speed += 0.001;
+        speed += 0.001;
         document.getElementById('coinCount').innerText = coins;
-        document.getElementById('score').innerText = score;
+        document.getElementById('score').innerText = Math.floor(score);
         requestAnimationFrame(update);
     }
 
