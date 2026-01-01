@@ -7,41 +7,39 @@
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; }
         #gameUI { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; }
-        #menu { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; }
-        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 45vh; overflow-y: scroll; padding: 10px; border: 2px solid #333; background: #111; width: 90%; border-radius: 10px; }
+        #menu { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; text-align: center; }
+        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 40vh; overflow-y: scroll; padding: 10px; border: 2px solid #333; background: #111; width: 90%; border-radius: 10px; }
         .char-card { border: 2px solid #444; padding: 8px; text-align: center; border-radius: 8px; background: #222; font-size: 10px; }
         .char-card img { width: 50px; height: 50px; display: block; margin: 0 auto; object-fit: contain; }
         .char-card.selected { border-color: #00ff00; background: #004400; }
-        button { padding: 18px 50px; font-size: 22px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; }
+        button { padding: 18px 50px; font-size: 22px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; margin-top: 10px; }
+        #muteBtn { position: absolute; bottom: 20px; right: 20px; background: #333; color: white; padding: 10px; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; line-height: 20px; border: none; z-index: 30; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="gameUI">
     <div style="color: #ffd700; font-size: 24px;">🪙 <span id="coinCount">0</span></div>
+    <div>BEST: <span id="highScore">0</span></div>
     <div>SCORE: <span id="score">0</span></div>
-    <div id="powerNotify" style="color:#00ffff; font-weight:bold; height: 20px;"></div>
+    <div id="powerNotify" style="color:#00ffff; font-weight:bold; margin-top:5px;"></div>
 </div>
 
 <div id="menu">
-    <h1 style="color:#00ff00;">CASTASTICS</h1>
-    <div style="color:#ffd700; margin-bottom:10px;">Bank: 🪙 <span id="totalCoins">0</span></div>
+    <h1 style="color:#00ff00; margin: 0;">CASTASTICS</h1>
+    <div style="color:#ffd700; margin-bottom:5px;">Bank: 🪙 <span id="totalCoins">0</span></div>
     <div class="char-grid" id="charGrid"></div>
     <button onclick="startGame()">RUN!</button>
-    <p style="font-size: 10px; margin-top: 10px; opacity: 0.6;">Music will start when you press RUN</p>
 </div>
 
+<button id="muteBtn" onclick="toggleMute()">🔊</button>
 <canvas id="gameCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Asset Loading
-    const assets = {
-        road: new Image(), magnet: new Image(), shield: new Image(), 
-        multiplier: new Image(), obsLow: new Image(), obsHigh: new Image()
-    };
+    const assets = { road: new Image(), magnet: new Image(), shield: new Image(), multiplier: new Image(), obsLow: new Image(), obsHigh: new Image() };
     assets.road.src = 'images/road.png';
     assets.magnet.src = 'images/magnet.png';
     assets.shield.src = 'images/shield.png';
@@ -49,26 +47,25 @@
     assets.obsLow.src = 'images/obstacle_low.png';
     assets.obsHigh.src = 'images/obstacle_high.png';
 
-    // Audio Loading
     const sounds = {
-        bg: new Audio('images/bg_music.mp3'),
-        magnet: new Audio('images/powerup_magnet.mp3'),
-        shield: new Audio('images/powerup_shield.mp3'),
-        multiplier: new Audio('images/powerup_multiplier.mp3'),
+        bg: new Audio('images/bg_music.mp3'), magnet: new Audio('images/powerup_magnet.mp3'),
+        shield: new Audio('images/powerup_shield.mp3'), multiplier: new Audio('images/powerup_multiplier.mp3'),
         death: new Audio('images/death.mp3')
     };
     sounds.bg.loop = true;
+    let isMuted = false;
 
     let gameState = 'menu', score = 0, coins = 0;
     let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
+    let highScore = parseInt(localStorage.getItem('casta_high')) || 0;
     let currentLane = 1, visualLane = 1, speed = 8, entities = [], powerTimer = 0, activePower = null;
-    let playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0, tilt = 0;
+    let playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
 
     let characters = [];
     for(let i=1; i<=105; i++){
         let img = new Image();
         img.src = `images/casta${i}.png`;
-        characters.push({ id: i, img: img, cost: i===1 ? 0 : i*100, unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', color: `hsl(${i*30}, 70%, 50%)` });
+        characters.push({ id: i, img: img, cost: i===1 ? 0 : i*100, unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', color: `hsl(${i*35}, 70%, 50%)` });
     }
     let selectedChar = characters[0];
 
@@ -76,10 +73,11 @@
         const grid = document.getElementById('charGrid');
         grid.innerHTML = '';
         document.getElementById('totalCoins').innerText = totalCoins;
+        document.getElementById('highScore').innerText = highScore;
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${!c.unlocked?'locked':''} ${selectedChar.id===c.id?'selected':''}`;
-            card.innerHTML = `<div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;"><img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'"></div><div>${c.unlocked?'CHOOSE':'🪙'+c.cost}</div>`;
+            card.innerHTML = `<div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;"><img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'"></div><div>${c.unlocked?'READY':'🪙'+c.cost}</div>`;
             card.onclick = () => {
                 if(c.unlocked){ selectedChar = c; initMenu(); }
                 else if(totalCoins >= c.cost){
@@ -93,20 +91,21 @@
         });
     }
 
+    function toggleMute() {
+        isMuted = !isMuted;
+        sounds.bg.muted = isMuted;
+        document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊';
+    }
+
     function startGame() {
         document.getElementById('menu').style.display = 'none';
         score = 0; coins = 0; entities = []; currentLane = 1; visualLane = 1; speed = 8;
-        powerTimer = 0; activePower = null; playerJumpVal = 0; isSliding = false;
-        
-        // Start Background Music
-        sounds.bg.currentTime = 0;
-        sounds.bg.play().catch(e => console.log("Audio waiting for user interaction"));
-        
+        powerTimer = 0; activePower = null;
+        if(!isMuted) { sounds.bg.currentTime = 0; sounds.bg.play().catch(()=>{}); }
         gameState = 'playing';
         update();
     }
 
-    // Input Handling
     let tStart = {x:0, y:0};
     window.addEventListener('touchstart', e => { tStart.x = e.touches[0].clientX; tStart.y = e.touches[0].clientY; });
     window.addEventListener('touchend', e => {
@@ -122,13 +121,6 @@
         }
     });
 
-    function playPowerSound(type) {
-        if(sounds[type.toLowerCase()]) {
-            sounds[type.toLowerCase()].currentTime = 0;
-            sounds[type.toLowerCase()].play();
-        }
-    }
-
     function update() {
         if(gameState !== 'playing') return;
         ctx.clearRect(0,0,canvas.width, canvas.height);
@@ -137,11 +129,9 @@
         else { ctx.fillStyle = '#222'; ctx.fillRect(0,0,canvas.width, canvas.height); }
 
         visualLane += (currentLane - visualLane) * 0.2; 
-        tilt = (currentLane - visualLane) * 0.5;
 
         if(playerJumpVal > 0 || playerYOffset < 0){
-            playerYOffset -= playerJumpVal;
-            playerJumpVal -= 1;
+            playerYOffset -= playerJumpVal; playerJumpVal -= 1;
             if(playerYOffset > 0) { playerYOffset = 0; playerJumpVal = 0; }
         }
         if(isSliding) { slideTimer--; if(slideTimer <= 0) isSliding = false; }
@@ -155,9 +145,12 @@
 
         entities.forEach((en, i) => {
             en.y += speed;
+            
+            // INTENSE MAGNET LOGIC
             if(activePower === 'MAGNET' && en.type === 'coin') {
-                let targetX = visualLane * (canvas.width/3) + (canvas.width/6) - 20;
-                en.x += (targetX - en.x) * 0.25;
+                let pRealX = currentLane * (canvas.width/3) + (canvas.width/6) - 20;
+                // Once coin is in view, pull it aggressively to the player's CURRENT lane
+                en.x += (pRealX - en.x) * 0.35; 
             }
 
             if(en.type === 'coin') { 
@@ -171,40 +164,35 @@
             }
 
             let pTop = canvas.height-160 + playerYOffset;
-            if(en.lane === currentLane && en.y > pTop - 30 && en.y < pTop + 60) {
-                if(en.type === 'coin') { 
-                    coins += (activePower === 'MULTIPLIER' ? 2 : 1); 
-                    entities.splice(i, 1); 
-                } else if(en.type.startsWith('obs')) {
-                    let canPass = (en.type === 'obsLow' && playerYOffset < -30) || (en.type === 'obsHigh' && isSliding);
-                    if(!canPass) {
-                        if(activePower === 'SHIELD') { 
-                            activePower = null; powerTimer = 0; entities.splice(i, 1); 
-                        } else { gameOver(); }
+            // Check collision against the real lane the player is in
+            if(Math.abs(en.x - (currentLane * (canvas.width/3) + (canvas.width/6) - 20)) < 40 && en.y > pTop - 30 && en.y < pTop + 60) {
+                if(en.type === 'coin') { coins += (activePower === 'MULTIPLIER' ? 2 : 1); entities.splice(i, 1); }
+                else if(en.type.startsWith('obs')) {
+                    if(!((en.type === 'obsLow' && playerYOffset < -30) || (en.type === 'obsHigh' && isSliding))) {
+                        if(activePower === 'SHIELD') { activePower = null; powerTimer = 0; entities.splice(i, 1); }
+                        else { gameOver(); }
                     }
                 } else { 
-                    activePower = en.type.toUpperCase(); 
-                    powerTimer = 450; 
-                    playPowerSound(en.type); // Trigger Powerup Audio
+                    activePower = en.type.toUpperCase(); powerTimer = 450; 
+                    if(!isMuted) sounds[en.type].play();
                     entities.splice(i, 1); 
                 }
             }
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
-        // Draw Animated Player
+        // Player
         let px = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
         let py = canvas.height-160 + playerYOffset;
         ctx.save();
         ctx.translate(px + 35, py + 50);
-        ctx.rotate(tilt);
         if(isSliding) { ctx.scale(1.2, 0.5); ctx.translate(0, 50); }
         else if(playerYOffset < 0) { ctx.scale(0.8, 1.2); }
         if(selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
         else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
         ctx.restore();
 
-        if(powerTimer > 0) { powerTimer--; document.getElementById('powerNotify').innerText = "POWER: " + activePower; }
+        if(powerTimer > 0) { powerTimer--; document.getElementById('powerNotify').innerText = activePower; }
         else { activePower = null; document.getElementById('powerNotify').innerText = ""; }
 
         score++; speed += 0.001;
@@ -215,8 +203,9 @@
 
     function gameOver() {
         gameState = 'menu';
-        sounds.bg.pause(); // Stop music
-        sounds.death.play(); // Play death sound
+        sounds.bg.pause();
+        if(!isMuted) sounds.death.play();
+        if(score > highScore) { highScore = score; localStorage.setItem('casta_high', highScore); }
         totalCoins += coins;
         localStorage.setItem('casta_bank', totalCoins);
         document.getElementById('menu').style.display = 'flex';
