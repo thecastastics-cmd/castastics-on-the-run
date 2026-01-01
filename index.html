@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Castastics On The Run</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
+        #gameUI { position: absolute; top: 15px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; }
+        #menu { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; }
+        .stat-bar { font-size: 20px; font-weight: bold; color: #ffd700; margin-bottom: 5px; }
+        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; max-height: 40vh; overflow-y: scroll; padding: 10px; border: 1px solid #444; }
+        .char-card { border: 2px solid #444; padding: 10px; text-align: center; border-radius: 8px; font-size: 12px; background: #111; }
+        .char-card.selected { border-color: #00ff00; background: #222; }
+        .locked { opacity: 0.5; color: #888; }
+        button { padding: 15px 40px; font-size: 20px; background: #00ff00; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px #008800; }
+        button:active { transform: translateY(2px); box-shadow: 0 2px #008800; }
+        #themeDisplay { position: absolute; top: 15px; right: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+<div id="gameUI">
+    <div class="stat-bar">🪙 <span id="coinCount">0</span></div>
+    <div>SCORE: <span id="score">0</span></div>
+    <div id="activePowerup" style="color: #00ffff; margin-top: 10px;"></div>
+</div>
+<div id="themeDisplay">CITY</div>
+
+<div id="menu">
+    <h1 style="color:#00ff00; margin-bottom:0;">CASTASTICS</h1>
+    <p style="margin-top:5px;">ON THE RUN</p>
+    <div class="stat-bar">Bank: 🪙 <span id="totalCoins">0</span></div>
+    <div class="char-grid" id="charGrid"></div>
+    <button onclick="startGame()">START RUN</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let gameState = 'menu';
+    let coins = 0;
+    let totalCoins = parseInt(localStorage.getItem('castastics_coins')) || 0;
+    let score = 0;
+    let multiplier = 1;
+    let powerupTimer = 0;
+    let activePower = null;
+    let currentThemeIndex = 0;
+
+    const themes = [
+        { name: "City", bg: "#1a1a2e", floor: "#16213e", obs: "#e94560", accent: "#4ecca3" },
+        { name: "Jungle", bg: "#1b4332", floor: "#081c15", obs: "#70e000", accent: "#d8f3dc" },
+        { name: "Space", bg: "#000000", floor: "#14213d", obs: "#fca311", accent: "#ffffff" }
+    ];
+
+    let characters = [];
+    for(let i=1; i<=105; i++) {
+        characters.push({
+            id: i,
+            name: "Casta-" + i,
+            color: `hsl(${(i * 45) % 360}, 80%, 60%)`,
+            cost: i === 1 ? 0 : i * 50,
+            unlocked: i === 1 || (localStorage.getItem('char_'+i) === 'true')
+        });
+    }
+    let selectedChar = characters[0];
+
+    function initMenu() {
+        const grid = document.getElementById('charGrid');
+        grid.innerHTML = '';
+        document.getElementById('totalCoins').innerText = totalCoins;
+        characters.forEach(c => {
+            const card = document.createElement('div');
+            card.className = `char-card ${!c.unlocked ? 'locked' : ''} ${selectedChar.id === c.id ? 'selected' : ''}`;
+            card.innerHTML = `<div style="width:25px; height:25px; background:${c.color}; margin: 0 auto 5px; border-radius:50%;"></div>
+                              <div>${c.unlocked ? c.name : '🪙' + c.cost}</div>`;
+            card.onclick = () => {
+                if (c.unlocked) { selectedChar = c; initMenu(); }
+                else if (totalCoins >= c.cost) {
+                    totalCoins -= c.cost;
+                    localStorage.setItem('castastics_coins', totalCoins);
+                    c.unlocked = true;
+                    localStorage.setItem('char_'+c.id, 'true');
+                    initMenu();
+                }
+            };
+            grid.appendChild(card);
+        });
+    }
+
+    let player = { x: 50, y: 0, w: 40, h: 60, dy: 0, isSliding: false, slideTimer: 0 };
+    let obstacles = [];
+    let worldItems = [];
+
+    function startGame() {
+        document.getElementById('menu').style.display = 'none';
+        gameState = 'playing';
+        score = 0; coins = 0; multiplier = 1;
+        obstacles = []; worldItems = [];
+        player.y = canvas.height - 150;
+        update();
+    }
+
+    window.addEventListener('touchstart', e => {
+        if (gameState !== 'playing') return;
+        const touchY = e.touches[0].clientY;
+        if (touchY < window.innerHeight / 2) {
+            if (player.y >= canvas.height - 115) player.dy = -16;
+        } else {
+            player.isSliding = true;
+            player.slideTimer = 45;
+        }
+    });
+
+    function update() {
+        if (gameState !== 'playing') return;
+
+        // Theme Switcher Logic (changes every 1000 points)
+        currentThemeIndex = Math.floor((score / 1000) % themes.length);
+        let theme = themes[currentThemeIndex];
+        document.getElementById('themeDisplay').innerText = theme.name;
+        document.getElementById('themeDisplay').style.color = theme.accent;
+
+        // Draw Background
+        ctx.fillStyle = theme.bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = theme.floor;
+        ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+        // Player
+        player.dy += 0.8;
+        player.y += player.dy;
+        if (player.isSliding) { player.h = 30; player.slideTimer--; if (player.slideTimer <= 0) player.isSliding = false; }
+        else { player.h = 60; }
+        if (player.y > canvas.height - 50 - player.h) { player.y = canvas.height - 50 - player.h; player.dy = 0; }
+
+        ctx.fillStyle = selectedChar.color;
+        ctx.shadowBlur = 10; ctx.shadowColor = selectedChar.color;
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+        ctx.shadowBlur = 0;
+
+        // Powerup UI
+        if (powerupTimer > 0) {
+            powerupTimer--;
+            document.getElementById('activePowerup').innerText = activePower + " (" + Math.ceil(powerupTimer/60) + "s)";
+        } else { activePower = null; multiplier = 1; document.getElementById('activePowerup').innerText = ""; }
+
+        // Spawn Logic
+        if (Math.random() < 0.04) {
+            let type = 'coin';
+            let r = Math.random();
+            if (r < 0.005) type = 'magnet';
+            else if (r < 0.01) type = 'shield';
+            else if (r < 0.015) type = '2x';
+            worldItems.push({ x: canvas.width, y: canvas.height - 120 - (Math.random() * 120), type: type });
+        }
+        if (Math.random() < 0.02) {
+            let isHigh = Math.random() > 0.6;
+            obstacles.push({ x: canvas.width, y: isHigh ? canvas.height - 140 : canvas.height - 90, w: 35, h: 40 });
+        }
+
+        // Items
+        worldItems.forEach((item, i) => {
+            if (activePower === 'magnet') { item.x -= (item.x - player.x) * 0.15; item.y -= (item.y - player.y) * 0.15; }
+            else { item.x -= 7; }
+            
+            ctx.fillStyle = item.type === 'coin' ? '#ffd700' : '#00ffff';
+            ctx.beginPath(); ctx.arc(item.x, item.y, 12, 0, Math.PI*2); ctx.fill();
+
+            if (Math.hypot(player.x - item.x, player.y - item.y) < 45) {
+                if (item.type === 'coin') coins += (1 * multiplier);
+                else { activePower = item.type.toUpperCase(); powerupTimer = 600; if(item.type === '2x') multiplier = 2; }
+                worldItems.splice(i, 1);
+            }
+        });
+
+        // Obstacles
+        obstacles.forEach((obs, i) => {
+            obs.x -= 8;
+            ctx.fillStyle = theme.obs;
+            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            if (player.x < obs.x + obs.w && player.x + player.w > obs.x && player.y < obs.y + obs.h && player.y + player.h > obs.y) {
+                if (activePower === 'SHIELD') { activePower = null; powerupTimer = 0; obstacles.splice(i, 1); }
+                else { gameOver(); }
+            }
+        });
+
+        score++;
+        document.getElementById('score').innerText = score;
+        document.getElementById('coinCount').innerText = coins;
+        requestAnimationFrame(update);
+    }
+
+    function gameOver() {
+        gameState = 'menu';
+        totalCoins += coins;
+        localStorage.setItem('castastics_coins', totalCoins);
+        document.getElementById('menu').style.display = 'flex';
+        initMenu();
+    }
+
+    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    initMenu();
+</script>
+</body>
+      </html>
