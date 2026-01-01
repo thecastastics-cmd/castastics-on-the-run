@@ -20,14 +20,14 @@
 
 <div id="gameUI">
     <div style="color: #ffd700; font-size: 28px;">🪙 <span id="coinCount">0</span></div>
-    <div style="font-size: 14px; opacity:0.8; color: #00ff00;">BEST: <span id="highScore">0</span></div>
-    <div style="font-size: 18px;">SCORE: <span id="score">0</span></div>
-    <div id="powerNotify" style="color:#00ffff; font-weight:bold; margin-top:5px;"></div>
+    <div style="font-size: 14px; opacity:0.8; color: #00ff00;">BEST: <span id="highScoreDisplay">0</span></div>
+    <div style="font-size: 18px;">SCORE: <span id="scoreDisplay">0</span></div>
+    <div id="powerNotify" style="color:#fbff00; font-weight:bold; margin-top:5px; text-shadow: 0 0 5px #000;"></div>
 </div>
 
 <div id="menu">
     <h1 style="color:#00ff00; margin: 0; font-style: italic; letter-spacing: 2px;">CASTASTICS</h1>
-    <div style="color:#ffd700; margin: 5px 0;">BANK: 🪙 <span id="totalCoins">0</span></div>
+    <div style="color:#ffd700; margin: 5px 0;">BANK: 🪙 <span id="totalCoinsDisplay">0</span></div>
     <div class="char-grid" id="charGrid"></div>
     <button onclick="startGame()">RUN!</button>
 </div>
@@ -60,6 +60,7 @@
     let highScore = parseInt(localStorage.getItem('casta_high')) || 0;
     let currentLane = 1, visualLane = 1, speed = 8, entities = [], powerTimer = 0, activePower = null;
     let playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
+    let lastTime = 0;
 
     let characters = [];
     for(let i=1; i<=105; i++){
@@ -72,8 +73,8 @@
     function initMenu() {
         const grid = document.getElementById('charGrid');
         grid.innerHTML = '';
-        document.getElementById('totalCoins').innerText = totalCoins;
-        document.getElementById('highScore').innerText = Math.floor(highScore);
+        document.getElementById('totalCoinsDisplay').innerText = totalCoins;
+        document.getElementById('highScoreDisplay').innerText = Math.floor(highScore);
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${!c.unlocked?'locked':''} ${selectedChar.id===c.id?'selected':''}`;
@@ -100,6 +101,7 @@
         document.getElementById('menu').style.display = 'none';
         score = 0; coins = 0; entities = []; currentLane = 1; visualLane = 1; speed = 8;
         powerTimer = 0; activePower = null;
+        lastTime = performance.now();
         if(!isMuted) { sounds.bg.currentTime = 0; sounds.bg.play().catch(()=>{}); }
         gameState = 'playing';
         update();
@@ -121,11 +123,18 @@
         }
     });
 
-    function update() {
+    function update(timestamp) {
         if(gameState !== 'playing') return;
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
-        // Background
+        // Score Ticker: 100/sec base. 200/sec with Multiplier.
+        let delta = (timestamp - lastTime) / 1000;
+        if(!isNaN(delta)) {
+            let scoreGain = activePower === 'MULTIPLIER' ? 200 : 100;
+            score += scoreGain * delta;
+        }
+        lastTime = timestamp;
+
         if(assets.road.complete && assets.road.width > 0) ctx.drawImage(assets.road, 0, 0, canvas.width, canvas.height);
         else { ctx.fillStyle = '#111'; ctx.fillRect(0,0,canvas.width, canvas.height); }
 
@@ -136,11 +145,8 @@
         }
         if(isSliding) { slideTimer--; if(slideTimer <= 0) isSliding = false; }
 
-        // Score Ticker: 100 per second (Assuming 60 FPS = ~1.67 per frame)
-        score += 1.67; 
-
-        // Spawn Logic
-        if(Math.floor(score) % 50 === 0) {
+        // Spawn logic (based on visual intervals)
+        if(Math.floor(score/10) % 5 === 0 && Math.random() < 0.1) {
             let lane = Math.floor(Math.random()*3);
             let r = Math.random();
             let type = r > 0.98 ? 'goldCoin' : (r > 0.95 ? 'magnet' : (r > 0.92 ? 'shield' : (r > 0.89 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsLow' : 'obsHigh')))));
@@ -149,14 +155,11 @@
 
         entities.forEach((en, i) => {
             en.y += speed;
-            
-            // Fixed Multiplier Logic + Magnet
             if(activePower === 'MAGNET' && (en.type === 'coin' || en.type === 'goldCoin')) {
                 let pTargetX = visualLane * (canvas.width/3) + (canvas.width/6) - 20;
                 en.x += (pTargetX - en.x) * 0.45;
             }
 
-            // Draw
             if(en.type === 'coin' || en.type === 'goldCoin') { 
                 ctx.fillStyle = en.type === 'goldCoin' ? '#fff700' : '#ffd700';
                 ctx.beginPath(); ctx.arc(en.x+20, en.y+20, en.type==='goldCoin'?22:15, 0, Math.PI*2); ctx.fill(); 
@@ -168,25 +171,22 @@
                 else { ctx.fillStyle = '#00ffff'; ctx.fillRect(en.x, en.y, 45, 45); }
             }
 
-            // Hit Detection
             let pVisualX = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
             let pTop = canvas.height-160 + playerYOffset;
             let dist = Math.abs(en.x - pVisualX);
 
             if(dist < 50 && en.y > pTop - 40 && en.y < pTop + 80) {
                 if(en.type === 'coin' || en.type === 'goldCoin') { 
-                    // MULTIPLIER FIX: Multiply the coin gain by 2 if active
                     let gain = (en.type === 'goldCoin' ? 50 : 1);
                     coins += (activePower === 'MULTIPLIER' ? gain * 2 : gain);
                     entities.splice(i, 1); 
-                }
-                else if(en.type.startsWith('obs')) {
+                } else if(en.type.startsWith('obs')) {
                     if(!((en.type === 'obsLow' && playerYOffset < -35) || (en.type === 'obsHigh' && isSliding))) {
                         if(activePower === 'SHIELD') { activePower = null; powerTimer = 0; entities.splice(i, 1); }
                         else { gameOver(); }
                     }
                 } else { 
-                    activePower = en.type.toUpperCase(); powerTimer = 500; 
+                    activePower = en.type.toUpperCase(); powerTimer = 600; // 10 seconds approx
                     if(!isMuted && sounds[en.type.toLowerCase()]) sounds[en.type.toLowerCase()].play();
                     entities.splice(i, 1); 
                 }
@@ -194,7 +194,7 @@
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
-        // Draw Player
+        // Player Render
         let px = visualLane * (canvas.width/3) + (canvas.width/6) - 35;
         let py = canvas.height-160 + playerYOffset;
         ctx.save();
@@ -207,12 +207,12 @@
 
         if(powerTimer > 0) { 
             powerTimer--; 
-            document.getElementById('powerNotify').innerText = activePower + " ACTIVE (" + Math.ceil(powerTimer/60) + "s)";
+            document.getElementById('powerNotify').innerText = activePower + " X2!";
         } else { activePower = null; document.getElementById('powerNotify').innerText = ""; }
 
         speed += 0.001;
         document.getElementById('coinCount').innerText = coins;
-        document.getElementById('score').innerText = Math.floor(score);
+        document.getElementById('scoreDisplay').innerText = Math.floor(score);
         requestAnimationFrame(update);
     }
 
