@@ -81,23 +81,24 @@
     let characters = [];
     const namingTiers = ["Squire", "Rogue", "Knight", "Mage", "Royal", "Celestial", "Eternal"];
     
+    // Performance Optimized Loading - Doesn't load all 275 at once
     for(let i=1; i<=275; i++){
-        let img = new Image(); 
-        img.src = `images/casta${i}.png`;
         let tierIndex = Math.min(Math.floor((i-1)/40), 6);
-        
         characters.push({ 
             id: i, 
             name: `${namingTiers[tierIndex]} #${i}`, 
-            img: img, 
+            imgSrc: `images/casta${i}.png`, 
+            img: null, // Loaded on demand
             cost: i===1 ? 0 : i*100, 
             unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', 
             color: `hsl(${i*37}, 70%, 50%)` 
         });
     }
-    let selectedChar = characters[0];
 
-    // Cheat Function updated with coins
+    let selectedChar = characters[0];
+    selectedChar.img = new Image();
+    selectedChar.img.src = selectedChar.imgSrc;
+
     function checkCheat() {
         const code = prompt("ENTER CODE:");
         if(code === "CAU75") {
@@ -105,7 +106,6 @@
                 c.unlocked = true;
                 localStorage.setItem('unlocked_'+c.id, 'true');
             });
-            // Add 99,999 coins
             totalCoins += 99999;
             localStorage.setItem('casta_bank', totalCoins);
             alert("ALL CHARACTERS UNLOCKED & 99,999 COINS ADDED!");
@@ -117,11 +117,29 @@
         const grid = document.getElementById('charGrid'); grid.innerHTML = '';
         document.getElementById('totalCoinsDisplay').innerText = totalCoins;
         document.getElementById('highScoreDisplay').innerText = Math.floor(highScore);
+        
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${selectedChar.id===c.id?'selected':''}`;
-            card.innerHTML = `<div style="font-size: 8px; color: #00ff00; margin-bottom: 2px;">${c.name}</div><div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;"><img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'"></div><div style="margin-top:4px;">${c.unlocked?'SELECT':'🪙'+c.cost}</div>`;
-            card.onclick = () => { if(c.unlocked){ selectedChar = c; initMenu(); } else if(totalCoins >= c.cost){ totalCoins -= c.cost; c.unlocked = true; localStorage.setItem('unlocked_'+c.id, 'true'); localStorage.setItem('casta_bank', totalCoins); initMenu(); } };
+            card.innerHTML = `
+                <div style="font-size: 8px; color: #00ff00; margin-bottom: 2px;">${c.name}</div>
+                <div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;">
+                    <img src="${c.imgSrc}" loading="lazy" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';">
+                </div>
+                <div style="margin-top:4px;">${c.unlocked?'SELECT':'🪙'+c.cost}</div>`;
+            
+            card.onclick = () => { 
+                if(c.unlocked){ 
+                    selectedChar = c; 
+                    if(!c.img) { c.img = new Image(); c.img.src = c.imgSrc; }
+                    initMenu(); 
+                } else if(totalCoins >= c.cost){ 
+                    totalCoins -= c.cost; c.unlocked = true; 
+                    localStorage.setItem('unlocked_'+c.id, 'true'); 
+                    localStorage.setItem('casta_bank', totalCoins); 
+                    initMenu(); 
+                } 
+            };
             grid.appendChild(card);
         });
     }
@@ -261,7 +279,7 @@
         else if(playerYOffset < -10) { ctx.scale(0.8, 1.2); }
         else { ctx.scale(1 + stretch, 1 - stretch); }
 
-        if(selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
+        if(selectedChar.img && selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
         else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
         ctx.restore();
 
@@ -292,4 +310,4 @@
     initMenu();
 </script>
 </body>
-</html>
+    </html>
