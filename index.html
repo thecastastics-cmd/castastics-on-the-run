@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Castastics Fantasy Run</title>
+    <title>Castastics Master Runner</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; }
         #gameUI { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; }
@@ -38,16 +38,9 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // 1. ASSETS & SOUNDS
     const assets = { 
-        road: new Image(), 
-        magnet: new Image(), 
-        shield: new Image(), 
-        multiplier: new Image(), 
-        obsLow: new Image(), 
-        obsHigh: new Image(),
-        coin: new Image(),
-        goldCoin: new Image()
+        road: new Image(), magnet: new Image(), shield: new Image(), multiplier: new Image(), 
+        obsLow: new Image(), obsHigh: new Image(), coin: new Image(), goldCoin: new Image()
     };
     assets.road.src = 'images/road.png'; 
     assets.magnet.src = 'images/magnet.png';
@@ -59,27 +52,19 @@
     assets.goldCoin.src = 'images/gold_coin.png';
 
     const sounds = {
-        bg: new Audio('images/bg_music.mp3'), 
-        magnet: new Audio('images/powerup_magnet.mp3'),
-        shield: new Audio('images/powerup_shield.mp3'), 
-        multiplier: new Audio('images/powerup_multiplier.mp3'),
-        death: new Audio('images/death.mp3'),
-        coin: new Audio('images/coin_ping.mp3') // Added coin sound
+        bg: new Audio('images/bg_music.mp3'), magnet: new Audio('images/powerup_magnet.mp3'),
+        shield: new Audio('images/powerup_shield.mp3'), multiplier: new Audio('images/powerup_multiplier.mp3'),
+        death: new Audio('images/death.mp3'), coin: new Audio('images/coin_ping.mp3')
     };
     sounds.bg.loop = true;
     let isMuted = false;
 
-    // 2. GAME VARIABLES
     let gameState = 'menu', score = 0, coins = 0, lastTime = 0;
     let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
     let highScore = parseInt(localStorage.getItem('casta_high')) || 0;
-    
-    let currentLane = 1, visualX = 0, speed = 8, roadScrollY = 0, entities = [];
-    let powerTimer = 0, activePower = null;
-    let playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
-    let runCycle = 0;
+    let currentLane = 1, visualX = 0, speed = 8, roadScrollY = 0, entities = [], runCycle = 0;
+    let powerTimer = 0, activePower = null, playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
 
-    // 3. 105 CHARACTER SYSTEM
     let characters = [];
     for(let i=1; i<=105; i++){
         let img = new Image(); img.src = `images/casta${i}.png`;
@@ -124,13 +109,11 @@
         update();
     }
 
-    // 4. MOBILE CONTROLS
     let tStart = {x:0, y:0};
     window.addEventListener('touchstart', e => { tStart.x = e.touches[0].clientX; tStart.y = e.touches[0].clientY; }, {passive: false});
     window.addEventListener('touchend', e => {
         if(gameState !== 'playing') return;
-        let dx = e.changedTouches[0].clientX - tStart.x;
-        let dy = e.changedTouches[0].clientY - tStart.y;
+        let dx = e.changedTouches[0].clientX - tStart.x, dy = e.changedTouches[0].clientY - tStart.y;
         if(Math.abs(dx) > Math.abs(dy)){
             if(dx > 30 && currentLane < 2) currentLane++;
             if(dx < -30 && currentLane > 0) currentLane--;
@@ -140,11 +123,9 @@
         }
     });
 
-    // 5. CORE LOOP
     function update(timestamp) {
         if(gameState !== 'playing') return;
         ctx.clearRect(0,0,canvas.width, canvas.height);
-
         let delta = (timestamp - lastTime) / 1000;
         if(!isNaN(delta)) {
             let scoreGain = (activePower === 'MULTIPLIER') ? 200 : 100;
@@ -154,7 +135,6 @@
         }
         lastTime = timestamp;
 
-        // ROAD
         if(assets.road.complete && assets.road.width > 0) {
             ctx.drawImage(assets.road, 0, roadScrollY, canvas.width, canvas.height);
             ctx.drawImage(assets.road, 0, roadScrollY - canvas.height, canvas.width, canvas.height);
@@ -173,29 +153,28 @@
         if(Math.floor(score/10) % 7 === 0 && Math.random() < 0.15) {
             let lane = Math.floor(Math.random()*3);
             let r = Math.random();
-            let type = r > 0.98 ? 'goldCoin' : (r > 0.94 ? 'magnet' : (r > 0.90 ? 'shield' : (r > 0.86 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsLow' : 'obsHigh')))));
+            // FIXED TYPE DEFINITIONS
+            let type = r > 0.97 ? 'goldCoin' : (r > 0.93 ? 'magnet' : (r > 0.89 ? 'shield' : (r > 0.85 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsLow' : 'obsHigh')))));
             entities.push({ lane, x: lane * (canvas.width/3) + (canvas.width/6) - 20, y: -100, type });
         }
 
         entities.forEach((en, i) => {
             en.y += speed;
-            if(activePower === 'MAGNET' && (en.type === 'coin' || en.type === 'goldCoin')) {
-                en.x += (visualX + 15 - en.x) * 0.25;
-            }
-
-            // DRAWING ENTITIES (Images first, Fallbacks second)
+            // MAGNET FEELS BOTH COIN TYPES
+            if(activePower === 'MAGNET' && (en.type === 'coin' || en.type === 'goldCoin')) en.x += (visualX + 15 - en.x) * 0.25;
+            
             let img = assets[en.type];
             if(img && img.complete && img.width > 0) {
-                ctx.drawImage(img, en.x, en.y, 50, 50);
+                let size = en.type === 'goldCoin' ? 65 : 50; // Gold is bigger
+                ctx.drawImage(img, en.x - (size-50)/2, en.y - (size-50)/2, size, size);
             } else {
-                // Fallbacks
-                ctx.fillStyle = en.type.includes('coin') ? '#ffd700' : (en.type === 'shield' ? '#00ffff' : '#ff00ff');
-                ctx.beginPath(); ctx.arc(en.x+25, en.y+25, 20, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = en.type === 'goldCoin' ? '#fff700' : (en.type === 'coin' ? '#ffd700' : '#ff00ff');
+                ctx.beginPath(); ctx.arc(en.x+25, en.y+25, en.type === 'goldCoin' ? 25 : 20, 0, Math.PI*2); ctx.fill(); 
             }
 
-            // COLLISION & SOUND
-            if(Math.abs(en.x - visualX) < 50 && en.y > canvas.height - 200 + playerYOffset && en.y < canvas.height - 80) {
-                if(en.type.includes('coin')) {
+            // FIXED COLLISION CHECK (Check for "Coin" inside the string)
+            if(Math.abs(en.x - visualX) < 55 && en.y > canvas.height - 200 + playerYOffset && en.y < canvas.height - 80) {
+                if(en.type.toLowerCase().includes('coin')) {
                     if(!isMuted) { sounds.coin.currentTime = 0; sounds.coin.play().catch(()=>{}); }
                     let gain = en.type === 'goldCoin' ? 50 : 1;
                     coins += (activePower === 'MULTIPLIER' ? gain + 2 : gain);
@@ -206,29 +185,21 @@
                         else { gameOver(); }
                     }
                 } else {
-                    // POWERUP TRIGGER
-                    activePower = en.type.toUpperCase(); 
-                    powerTimer = 600;
-                    if(!isMuted && sounds[en.type.toLowerCase()]) {
-                        sounds[en.type.toLowerCase()].currentTime = 0;
-                        sounds[en.type.toLowerCase()].play().catch(()=>{}); 
-                    }
+                    activePower = en.type.toUpperCase(); powerTimer = 600;
+                    if(!isMuted && sounds[en.type.toLowerCase()]) { sounds[en.type.toLowerCase()].currentTime = 0; sounds[en.type.toLowerCase()].play().catch(()=>{}); }
                     entities.splice(i, 1);
                 }
             }
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
-        // CHARACTER
-        let bob = Math.sin(runCycle * Math.PI * 2) * 8;
-        let stretch = Math.sin(runCycle * Math.PI * 2) * 0.15;
+        let bob = Math.sin(runCycle * Math.PI * 2) * 8, stretch = Math.sin(runCycle * Math.PI * 2) * 0.15;
         ctx.save();
         ctx.translate(visualX + 35, canvas.height - 160 + playerYOffset + 50 + bob);
         ctx.rotate((targetX - visualX) * 0.05);
         if(isSliding) { ctx.scale(1.4, 0.4); ctx.translate(0, 50); }
         else if(playerYOffset < -10) { ctx.scale(0.8, 1.2); }
         else { ctx.scale(1 + stretch, 1 - stretch); }
-
         if(selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
         else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
         ctx.restore();
@@ -236,7 +207,9 @@
         const notify = document.getElementById('powerNotify');
         if(powerTimer > 0) {
             powerTimer--;
-            notify.innerText = activePower + (activePower === 'MULTIPLIER' ? " (+2 COINS & SCORE X2)" : " ACTIVE");
+            if(activePower === 'MULTIPLIER') { notify.innerText = "SCORE X2 & BONUS COINS!"; notify.style.color = "#fbff00"; }
+            else if(activePower === 'SHIELD') { notify.innerText = "SHIELD ACTIVE"; notify.style.color = "#00ffff"; }
+            else if(activePower === 'MAGNET') { notify.innerText = "MAGNET ON"; notify.style.color = "#ff00ff"; }
         } else { activePower = null; notify.innerText = ""; }
 
         speed += 0.001;
@@ -253,10 +226,9 @@
         document.getElementById('menu').style.display = 'flex';
         initMenu();
     }
-
     window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     initMenu();
 </script>
 </body>
-    </html>
+</html>
