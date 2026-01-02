@@ -64,10 +64,26 @@
     let currentLane = 1, visualX = 0, speed = 8, roadScrollY = 0, entities = [], runCycle = 0;
     let powerTimer = 0, activePower = null, playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
 
+    // --- CHARACTER DATA WITH NAMES ---
     let characters = [];
+    const namingTiers = ["Squire", "Rogue", "Knight", "Mage", "Royal", "Celestial"];
+
     for(let i=1; i<=105; i++){
-        let img = new Image(); img.src = `images/casta${i}.png`;
-        characters.push({ id: i, img: img, cost: i===1 ? 0 : i*100, unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', color: `hsl(${i*37}, 70%, 50%)` });
+        let img = new Image(); 
+        img.src = `images/casta${i}.png`;
+        
+        // Calculate name based on tier
+        let tierIndex = Math.min(Math.floor((i-1)/20), 5);
+        let charName = `${namingTiers[tierIndex]} #${i}`;
+        
+        characters.push({ 
+            id: i, 
+            name: charName,
+            img: img, 
+            cost: i===1 ? 0 : i*100, 
+            unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', 
+            color: `hsl(${i*37}, 70%, 50%)` 
+        });
     }
     let selectedChar = characters[0];
 
@@ -75,10 +91,20 @@
         const grid = document.getElementById('charGrid'); grid.innerHTML = '';
         document.getElementById('totalCoinsDisplay').innerText = totalCoins;
         document.getElementById('highScoreDisplay').innerText = Math.floor(highScore);
+        
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${selectedChar.id===c.id?'selected':''}`;
-            card.innerHTML = `<div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;"><img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'"></div><div style="margin-top:4px;">${c.unlocked?'SELECT':'🪙'+c.cost}</div>`;
+            
+            // Layout with Name + Image + Price
+            card.innerHTML = `
+                <div style="font-size: 8px; color: #00ff00; margin-bottom: 2px;">${c.name}</div>
+                <div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;">
+                    <img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
+                </div>
+                <div style="margin-top:4px;">${c.unlocked ? 'SELECT' : '🪙' + c.cost}</div>
+            `;
+            
             card.onclick = () => {
                 if(c.unlocked){ selectedChar = c; initMenu(); }
                 else if(totalCoins >= c.cost){
@@ -104,7 +130,6 @@
         powerTimer = 0; activePower = null; playerYOffset = 0;
         lastTime = performance.now();
         
-        // RESET MUSIC TO START
         if(!isMuted) {
             sounds.bg.currentTime = 0;
             sounds.bg.play().catch(()=>{});
@@ -157,7 +182,6 @@
         if(Math.floor(score/10) % 7 === 0 && Math.random() < 0.15) {
             let lane = Math.floor(Math.random()*3);
             let r = Math.random();
-            // Removed goldCoin from the list
             let type = r > 0.94 ? 'magnet' : (r > 0.88 ? 'shield' : (r > 0.82 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsLow' : 'obsHigh'))));
             entities.push({ lane, x: lane * (canvas.width/3) + (canvas.width/6) - 20, y: -100, type });
         }
