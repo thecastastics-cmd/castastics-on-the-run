@@ -64,15 +64,12 @@
     let currentLane = 1, visualX = 0, speed = 8, roadScrollY = 0, entities = [], runCycle = 0;
     let powerTimer = 0, activePower = null, playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
 
-    // --- CHARACTER DATA WITH NAMES ---
     let characters = [];
     const namingTiers = ["Squire", "Rogue", "Knight", "Mage", "Royal", "Celestial"];
 
     for(let i=1; i<=105; i++){
         let img = new Image(); 
         img.src = `images/casta${i}.png`;
-        
-        // Calculate name based on tier
         let tierIndex = Math.min(Math.floor((i-1)/20), 5);
         let charName = `${namingTiers[tierIndex]} #${i}`;
         
@@ -95,8 +92,6 @@
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${selectedChar.id===c.id?'selected':''}`;
-            
-            // Layout with Name + Image + Price
             card.innerHTML = `
                 <div style="font-size: 8px; color: #00ff00; margin-bottom: 2px;">${c.name}</div>
                 <div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;">
@@ -129,12 +124,7 @@
         visualX = (canvas.width / 3) + (canvas.width / 6) - 35;
         powerTimer = 0; activePower = null; playerYOffset = 0;
         lastTime = performance.now();
-        
-        if(!isMuted) {
-            sounds.bg.currentTime = 0;
-            sounds.bg.play().catch(()=>{});
-        }
-        
+        if(!isMuted) { sounds.bg.currentTime = 0; sounds.bg.play().catch(()=>{}); }
         gameState = 'playing';
         update();
     }
@@ -186,6 +176,7 @@
             entities.push({ lane, x: lane * (canvas.width/3) + (canvas.width/6) - 20, y: -100, type });
         }
 
+        // --- UPDATED COLLISION (MIDDLE SCREEN) ---
         entities.forEach((en, i) => {
             en.y += speed;
             if(activePower === 'MAGNET' && en.type === 'coin') en.x += (visualX + 15 - en.x) * 0.25;
@@ -198,7 +189,9 @@
                 ctx.beginPath(); ctx.arc(en.x+25, en.y+25, 20, 0, Math.PI*2); ctx.fill(); 
             }
 
-            if(Math.abs(en.x - visualX) < 55 && en.y > canvas.height - 200 + playerYOffset && en.y < canvas.height - 80) {
+            // Hitbox now checks around the middle of the screen (height / 2)
+            let midY = canvas.height / 2;
+            if(Math.abs(en.x - visualX) < 55 && en.y > midY + playerYOffset && en.y < midY + 120) {
                 if(en.type === 'coin') {
                     if(!isMuted) { sounds.coin.currentTime = 0; sounds.coin.play().catch(()=>{}); }
                     coins += (activePower === 'MULTIPLIER' ? 3 : 1);
@@ -219,7 +212,8 @@
 
         let bob = Math.sin(runCycle * Math.PI * 2) * 8, stretch = Math.sin(runCycle * Math.PI * 2) * 0.15;
         ctx.save();
-        ctx.translate(visualX + 35, canvas.height - 160 + playerYOffset + 50 + bob);
+        // --- UPDATED CHARACTER DRAWING (MIDDLE SCREEN) ---
+        ctx.translate(visualX + 35, (canvas.height / 2) + playerYOffset + 50 + bob);
         ctx.rotate((targetX - visualX) * 0.05);
         if(isSliding) { ctx.scale(1.4, 0.4); ctx.translate(0, 50); }
         else if(playerYOffset < -10) { ctx.scale(0.8, 1.2); }
