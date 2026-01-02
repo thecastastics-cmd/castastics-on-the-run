@@ -6,13 +6,16 @@
     <title>Castastics Master Runner</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; }
-        #gameUI { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; }
-        #menu { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; text-align: center; }
+        #gameUI { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; width: 100%; }
+        #menu, #reviveMenu { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; text-align: center; }
+        #reviveMenu { display: none; z-index: 25; }
         .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 40vh; overflow-y: scroll; padding: 10px; border: 2px solid #444; background: #111; width: 90%; border-radius: 10px; }
         .char-card { border: 2px solid #444; padding: 8px; text-align: center; border-radius: 8px; background: #222; font-size: 10px; }
         .char-card.selected { border-color: #00ff00; background: #004400; }
-        button { padding: 18px 50px; font-size: 22px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; }
+        button { padding: 18px 40px; font-size: 22px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; margin: 5px; }
+        .secondary-btn { background: #555; color: white; font-size: 16px; padding: 10px 25px; }
         #muteBtn { position: absolute; bottom: 20px; right: 20px; background: #333; color: white; border-radius: 50%; width: 45px; height: 45px; border: none; z-index: 30; }
+        #pauseBtn { position: absolute; top: 15px; right: 15px; z-index: 30; background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 15px; border-radius: 5px; pointer-events: auto; }
     </style>
 </head>
 <body>
@@ -22,6 +25,7 @@
     <div style="font-size: 14px; opacity:0.8; color: #00ff00;">BEST: <span id="highScoreDisplay">0</span></div>
     <div style="font-size: 18px;">SCORE: <span id="scoreDisplay">0</span></div>
     <div id="powerNotify" style="font-weight:bold; margin-top:5px; text-shadow: 0 0 5px #000;"></div>
+    <button id="pauseBtn" onclick="togglePause()">PAUSE</button>
 </div>
 
 <div id="menu">
@@ -29,6 +33,13 @@
     <div style="color:#ffd700; margin: 5px 0;">BANK: 🪙 <span id="totalCoinsDisplay">0</span></div>
     <div class="char-grid" id="charGrid"></div>
     <button onclick="startGame()">RUN!</button>
+</div>
+
+<div id="reviveMenu">
+    <h2 style="color:#ffd700;">CRASHED!</h2>
+    <p>Revive for 🪙 <span id="reviveCostText">5</span>?</p>
+    <button onclick="revivePlayer()">REVIVE</button>
+    <button class="secondary-btn" onclick="endGamePermanently()">NO THANKS</button>
 </div>
 
 <button id="muteBtn" onclick="toggleMute()">🔊</button>
@@ -63,24 +74,16 @@
     let highScore = parseInt(localStorage.getItem('casta_high')) || 0;
     let currentLane = 1, visualX = 0, speed = 8, roadScrollY = 0, entities = [], runCycle = 0;
     let powerTimer = 0, activePower = null, playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
+    
+    let reviveCost = 5;
+    let isPaused = false;
 
     let characters = [];
     const namingTiers = ["Squire", "Rogue", "Knight", "Mage", "Royal", "Celestial"];
-
     for(let i=1; i<=105; i++){
-        let img = new Image(); 
-        img.src = `images/casta${i}.png`;
+        let img = new Image(); img.src = `images/casta${i}.png`;
         let tierIndex = Math.min(Math.floor((i-1)/20), 5);
-        let charName = `${namingTiers[tierIndex]} #${i}`;
-        
-        characters.push({ 
-            id: i, 
-            name: charName,
-            img: img, 
-            cost: i===1 ? 0 : i*100, 
-            unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', 
-            color: `hsl(${i*37}, 70%, 50%)` 
-        });
+        characters.push({ id: i, name: `${namingTiers[tierIndex]} #${i}`, img: img, cost: i===1 ? 0 : i*100, unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', color: `hsl(${i*37}, 70%, 50%)` });
     }
     let selectedChar = characters[0];
 
@@ -88,29 +91,20 @@
         const grid = document.getElementById('charGrid'); grid.innerHTML = '';
         document.getElementById('totalCoinsDisplay').innerText = totalCoins;
         document.getElementById('highScoreDisplay').innerText = Math.floor(highScore);
-        
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${selectedChar.id===c.id?'selected':''}`;
-            card.innerHTML = `
-                <div style="font-size: 8px; color: #00ff00; margin-bottom: 2px;">${c.name}</div>
-                <div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;">
-                    <img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
-                </div>
-                <div style="margin-top:4px;">${c.unlocked ? 'SELECT' : '🪙' + c.cost}</div>
-            `;
-            
-            card.onclick = () => {
-                if(c.unlocked){ selectedChar = c; initMenu(); }
-                else if(totalCoins >= c.cost){
-                    totalCoins -= c.cost; c.unlocked = true;
-                    localStorage.setItem('unlocked_'+c.id, 'true');
-                    localStorage.setItem('casta_bank', totalCoins);
-                    initMenu();
-                }
-            };
+            card.innerHTML = `<div style="font-size: 8px; color: #00ff00; margin-bottom: 2px;">${c.name}</div><div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;"><img src="${c.img.src}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'"></div><div style="margin-top:4px;">${c.unlocked?'SELECT':'🪙'+c.cost}</div>`;
+            card.onclick = () => { if(c.unlocked){ selectedChar = c; initMenu(); } else if(totalCoins >= c.cost){ totalCoins -= c.cost; c.unlocked = true; localStorage.setItem('unlocked_'+c.id, 'true'); localStorage.setItem('casta_bank', totalCoins); initMenu(); } };
             grid.appendChild(card);
         });
+    }
+
+    function togglePause() {
+        if(gameState !== 'playing') return;
+        isPaused = !isPaused;
+        document.getElementById('pauseBtn').innerText = isPaused ? 'RESUME' : 'PAUSE';
+        if(isPaused) sounds.bg.pause(); else if(!isMuted) sounds.bg.play().catch(()=>{});
     }
 
     function toggleMute() {
@@ -122,17 +116,41 @@
         document.getElementById('menu').style.display = 'none';
         score = 0; coins = 0; entities = []; currentLane = 1; speed = 8; roadScrollY = 0;
         visualX = (canvas.width / 3) + (canvas.width / 6) - 35;
-        powerTimer = 0; activePower = null; playerYOffset = 0;
+        powerTimer = 0; activePower = null; playerYOffset = 0; reviveCost = 5; isPaused = false;
         lastTime = performance.now();
         if(!isMuted) { sounds.bg.currentTime = 0; sounds.bg.play().catch(()=>{}); }
         gameState = 'playing';
         update();
     }
 
+    function revivePlayer() {
+        if (totalCoins >= reviveCost) {
+            totalCoins -= reviveCost;
+            localStorage.setItem('casta_bank', totalCoins);
+            reviveCost *= 2; // Double cost for next time
+            document.getElementById('reviveMenu').style.display = 'none';
+            entities = []; // Clear obstacles to give a fair start
+            gameState = 'playing';
+            if(!isMuted) sounds.bg.play().catch(()=>{});
+            lastTime = performance.now();
+            update();
+        } else {
+            alert("Not enough coins!");
+        }
+    }
+
+    function endGamePermanently() {
+        document.getElementById('reviveMenu').style.display = 'none';
+        document.getElementById('menu').style.display = 'flex';
+        if(score > highScore) { highScore = score; localStorage.setItem('casta_high', highScore); }
+        totalCoins += coins; localStorage.setItem('casta_bank', totalCoins);
+        initMenu();
+    }
+
     let tStart = {x:0, y:0};
     window.addEventListener('touchstart', e => { tStart.x = e.touches[0].clientX; tStart.y = e.touches[0].clientY; }, {passive: false});
     window.addEventListener('touchend', e => {
-        if(gameState !== 'playing') return;
+        if(gameState !== 'playing' || isPaused) return;
         let dx = e.changedTouches[0].clientX - tStart.x, dy = e.changedTouches[0].clientY - tStart.y;
         if(Math.abs(dx) > Math.abs(dy)){
             if(dx > 30 && currentLane < 2) currentLane++;
@@ -144,13 +162,16 @@
     });
 
     function update(timestamp) {
-        if(gameState !== 'playing') return;
+        if(gameState !== 'playing' || isPaused) {
+            if(isPaused) requestAnimationFrame(update);
+            return;
+        }
         ctx.clearRect(0,0,canvas.width, canvas.height);
         let delta = (timestamp - lastTime) / 1000;
         if(!isNaN(delta)) {
             let scoreGain = (activePower === 'MULTIPLIER') ? 200 : 100;
             score += scoreGain * delta;
-            runCycle += delta * (speed * 1.5);
+            runCycle += delta * 5; // Fixed speed for the swirl
             roadScrollY += speed; if(roadScrollY >= canvas.height) roadScrollY = 0;
         }
         lastTime = timestamp;
@@ -176,20 +197,13 @@
             entities.push({ lane, x: lane * (canvas.width/3) + (canvas.width/6) - 20, y: -100, type });
         }
 
-        // --- UPDATED COLLISION (MIDDLE SCREEN) ---
         entities.forEach((en, i) => {
             en.y += speed;
             if(activePower === 'MAGNET' && en.type === 'coin') en.x += (visualX + 15 - en.x) * 0.25;
-            
             let img = assets[en.type];
-            if(img && img.complete && img.width > 0) {
-                ctx.drawImage(img, en.x, en.y, 50, 50);
-            } else {
-                ctx.fillStyle = en.type === 'coin' ? '#ffd700' : '#ff00ff';
-                ctx.beginPath(); ctx.arc(en.x+25, en.y+25, 20, 0, Math.PI*2); ctx.fill(); 
-            }
+            if(img && img.complete && img.width > 0) ctx.drawImage(img, en.x, en.y, 50, 50);
+            else { ctx.fillStyle = en.type === 'coin' ? '#ffd700' : '#ff00ff'; ctx.beginPath(); ctx.arc(en.x+25, en.y+25, 20, 0, Math.PI*2); ctx.fill(); }
 
-            // Hitbox now checks around the middle of the screen (height / 2)
             let midY = canvas.height / 2;
             if(Math.abs(en.x - visualX) < 55 && en.y > midY + playerYOffset && en.y < midY + 120) {
                 if(en.type === 'coin') {
@@ -199,7 +213,7 @@
                 } else if(en.type.startsWith('obs')) {
                     if(!((en.type === 'obsLow' && playerYOffset < -35) || (en.type === 'obsHigh' && isSliding))) {
                         if(activePower === 'SHIELD') { activePower = null; powerTimer = 0; entities.splice(i, 1); }
-                        else { gameOver(); }
+                        else { triggerDeath(); }
                     }
                 } else {
                     activePower = en.type.toUpperCase(); powerTimer = 600;
@@ -210,14 +224,20 @@
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
-        let bob = Math.sin(runCycle * Math.PI * 2) * 8, stretch = Math.sin(runCycle * Math.PI * 2) * 0.15;
+        // --- NEW SWIRLING ANIMATION ---
+        let swirlX = Math.sin(runCycle * Math.PI) * 15; // Side to side movement
+        let stretch = Math.sin(runCycle * Math.PI * 2) * 0.1;
+        
         ctx.save();
-        // --- UPDATED CHARACTER DRAWING (MIDDLE SCREEN) ---
-        ctx.translate(visualX + 35, (canvas.height / 2) + playerYOffset + 50 + bob);
-        ctx.rotate((targetX - visualX) * 0.05);
+        ctx.translate(visualX + 35 + swirlX, (canvas.height / 2) + playerYOffset + 50);
+        
+        // Lane switching spin logic (kept from before)
+        ctx.rotate((targetX - visualX) * 0.05); 
+        
         if(isSliding) { ctx.scale(1.4, 0.4); ctx.translate(0, 50); }
         else if(playerYOffset < -10) { ctx.scale(0.8, 1.2); }
         else { ctx.scale(1 + stretch, 1 - stretch); }
+
         if(selectedChar.img.complete && selectedChar.img.width > 0) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
         else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
         ctx.restore();
@@ -236,18 +256,17 @@
         requestAnimationFrame(update);
     }
 
-    function gameOver() {
-        gameState = 'menu'; 
+    function triggerDeath() {
+        gameState = 'revive';
         sounds.bg.pause();
         if(!isMuted) sounds.death.play().catch(()=>{});
-        if(score > highScore) { highScore = score; localStorage.setItem('casta_high', highScore); }
-        totalCoins += coins; localStorage.setItem('casta_bank', totalCoins);
-        document.getElementById('menu').style.display = 'flex';
-        initMenu();
+        document.getElementById('reviveCostText').innerText = reviveCost;
+        document.getElementById('reviveMenu').style.display = 'flex';
     }
+
     window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     initMenu();
 </script>
 </body>
-</html>
+    </html>
