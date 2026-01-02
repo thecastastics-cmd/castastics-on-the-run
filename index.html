@@ -29,7 +29,7 @@
 </div>
 
 <div id="menu">
-    <h1 style="color:#00ff00; margin: 0; font-style: italic;">CASTASTICS</h1>
+    <h1 style="color:#00ff00; margin: 0; font-style: italic; cursor: pointer; pointer-events: auto;" onclick="checkCheat()">CASTASTICS</h1>
     <div style="color:#ffd700; margin: 5px 0;">BANK: 🪙 <span id="totalCoinsDisplay">0</span></div>
     <div class="char-grid" id="charGrid"></div>
     <button onclick="startGame()">RUN!</button>
@@ -81,11 +81,10 @@
     let characters = [];
     const namingTiers = ["Squire", "Rogue", "Knight", "Mage", "Royal", "Celestial", "Eternal"];
     
-    // --- UPDATED TO 275 CHARACTERS ---
     for(let i=1; i<=275; i++){
         let img = new Image(); 
         img.src = `images/casta${i}.png`;
-        let tierIndex = Math.min(Math.floor((i-1)/40), 6); // Spread names across the 275
+        let tierIndex = Math.min(Math.floor((i-1)/40), 6);
         
         characters.push({ 
             id: i, 
@@ -97,6 +96,19 @@
         });
     }
     let selectedChar = characters[0];
+
+    // Cheat Function
+    function checkCheat() {
+        const code = prompt("ENTER CODE:");
+        if(code === "CAU75") {
+            characters.forEach(c => {
+                c.unlocked = true;
+                localStorage.setItem('unlocked_'+c.id, 'true');
+            });
+            alert("ALL CHARACTERS UNLOCKED!");
+            initMenu();
+        }
+    }
 
     function initMenu() {
         const grid = document.getElementById('charGrid'); grid.innerHTML = '';
