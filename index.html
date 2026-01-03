@@ -39,7 +39,7 @@
 <div id="previewer">
     <h2 id="previewName">CHARACTER NAME</h2>
     <div id="abilityText" style="color:#00ffff; font-size:12px; margin-bottom:5px;"></div>
-    <img id="largeImg" src="" alt="Preview">
+    <img id="largeImg" src="" alt="Preview" onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='">
     <div id="previewStatus" style="margin-bottom: 20px; font-weight: bold;">COST: 🪙100</div>
     <button id="previewActionBtn" onclick="handlePreviewAction()">SELECT</button>
     <button class="secondary-btn" onclick="closePreviewer()">BACK</button>
@@ -103,7 +103,7 @@
         bg: new Audio('images/bg_music.mp3'), magnet: new Audio('images/powerup_magnet.mp3'),
         shield: new Audio('images/powerup_shield.mp3'), multiplier: new Audio('images/powerup_multiplier.mp3'),
         death: new Audio('images/death.mp3'), coin: new Audio('images/coin_ping.mp3'),
-        oink: new Audio('images/oink.mp3') // NEW SOUND
+        oink: new Audio('images/oink.mp3')
     };
     sounds.bg.loop = true;
     let isMuted = false;
@@ -136,12 +136,9 @@
         document.getElementById('previewName').innerText = char.name;
         document.getElementById('largeImg').src = char.imgSrc;
         const ability = document.getElementById('abilityText');
-        
-        // Character Abilities Text
         if(char.name === "Super Magnet") ability.innerText = "⭐ ABILITY: PERMANENT MAGNET";
         else if(char.name === "Bella The Pig") ability.innerText = "⭐ ABILITY: 2X COINS & OINK!";
         else ability.innerText = "";
-
         const btn = document.getElementById('previewActionBtn');
         const status = document.getElementById('previewStatus');
         if(char.unlocked) {
@@ -187,8 +184,7 @@
         characters.forEach(c => {
             const card = document.createElement('div');
             card.className = `char-card ${selectedChar.id===c.id?'selected':''}`;
-            card.innerHTML = `
-                <div style="font-size: 8px; color: #00ff00; margin-bottom: 2px; overflow: hidden; white-space: nowrap;">${c.name}</div>
+            card.innerHTML = `<div style="font-size: 8px; color: #00ff00; margin-bottom: 2px; overflow: hidden; white-space: nowrap;">${c.name}</div>
                 <div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;">
                     <img src="${c.imgSrc}" loading="lazy" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';">
                 </div>`;
@@ -217,7 +213,6 @@
         lastTime = performance.now();
         if(!isMuted) { 
             sounds.bg.currentTime = 0; sounds.bg.play().catch(()=>{});
-            // BELLA OINK ON START
             if(selectedChar.name === "Bella The Pig") sounds.oink.play().catch(()=>{});
         }
         gameState = 'playing'; update();
@@ -266,14 +261,16 @@
         }
         lastTime = timestamp;
 
-        if(assets.road.complete) {
+        // Draw Road
+        if(assets.road.complete && assets.road.width > 0) {
             ctx.drawImage(assets.road, 0, roadScrollY, canvas.width, canvas.height);
             ctx.drawImage(assets.road, 0, roadScrollY - canvas.height, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = '#111'; ctx.fillRect(0,0,canvas.width,canvas.height);
         }
 
         let targetX = currentLane * (canvas.width / 3) + (canvas.width / 6) - 35;
         visualX += (targetX - visualX) * 0.15;
-
         if(playerJumpVal !== 0 || playerYOffset < 0){
             playerYOffset -= playerJumpVal; playerJumpVal -= 1.2;
             if(playerYOffset > 0) { playerYOffset = 0; playerJumpVal = 0; }
@@ -289,20 +286,17 @@
 
         entities.forEach((en, i) => {
             en.y += speed;
-            // SUPER MAGNET ABILITY OR ACTIVE POWER
-            if((activePower === 'MAGNET' || selectedChar.name === "Super Magnet") && en.type === 'coin') {
+            if((activePower === 'MAGNET' || (selectedChar.name === "Super Magnet" && selectedChar.unlocked)) && en.type === 'coin') {
                 en.x += (visualX + 15 - en.x) * 0.25;
             }
-            
             let img = assets[en.type];
-            if(img && img.complete) ctx.drawImage(img, en.x, en.y, 50, 50);
+            if(img && img.complete && img.width > 0) ctx.drawImage(img, en.x, en.y, 50, 50);
             else { ctx.fillStyle = en.type === 'coin' ? '#ffd700' : '#ff00ff'; ctx.beginPath(); ctx.arc(en.x+25, en.y+25, 20, 0, Math.PI*2); ctx.fill(); }
-
+            
             let midY = canvas.height / 2;
-            if(Math.abs(en.x - visualX) < 55 && en.y > midY + playerYOffset && en.y < midY + 120) {
+            if(Math.abs(en.x - (visualX+10)) < 45 && en.y > midY + playerYOffset && en.y < midY + 120) {
                 if(en.type === 'coin') {
                     if(!isMuted) { sounds.coin.currentTime = 0; sounds.coin.play().catch(()=>{}); }
-                    // BELLA PIG COIN BOOST (Base 2x, Multiplier 6x)
                     let coinVal = (activePower === 'MULTIPLIER' ? 3 : 1);
                     if(selectedChar.name === "Bella The Pig") coinVal *= 2;
                     coins += coinVal;
@@ -321,6 +315,7 @@
             if(en.y > canvas.height) entities.splice(i,1);
         });
 
+        // PLAYER DRAWING
         let swirlX = Math.sin(runCycle * Math.PI) * 15;
         let stretch = Math.sin(runCycle * Math.PI * 2) * 0.1;
         ctx.save();
@@ -330,8 +325,13 @@
         else if(playerYOffset < -10) { ctx.scale(0.8, 1.2); }
         else { ctx.scale(1 + stretch, 1 - stretch); }
 
-        if(selectedChar.img && selectedChar.img.complete) ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
-        else { ctx.fillStyle = selectedChar.color; ctx.fillRect(-35, -50, 70, 100); }
+        // Bulletproof Check:
+        if(selectedChar.img && selectedChar.img.complete && selectedChar.img.naturalWidth !== 0) {
+            ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
+        } else {
+            ctx.fillStyle = selectedChar.color || 'green';
+            ctx.fillRect(-35, -50, 70, 100);
+        }
         ctx.restore();
 
         const notify = document.getElementById('powerNotify');
@@ -340,8 +340,11 @@
             if(activePower === 'MULTIPLIER') { notify.innerText = "SCORE X2 & BONUS COINS!"; notify.style.color = "#fbff00"; }
             else if(activePower === 'SHIELD') { notify.innerText = "SHIELD ACTIVE"; notify.style.color = "#00ffff"; }
             else if(activePower === 'MAGNET') { notify.innerText = "MAGNET ON"; notify.style.color = "#ff00ff"; }
-        } else { activePower = null; notify.innerText = (selectedChar.name === "Super Magnet") ? "MAGNET ALWAYS ON" : ""; }
-
+        } else { 
+            activePower = null; 
+            notify.innerText = (selectedChar.name === "Super Magnet" && selectedChar.unlocked) ? "MAGNET ALWAYS ON" : ""; 
+            notify.style.color = "white";
+        }
         speed += 0.001;
         document.getElementById('coinCount').innerText = coins;
         document.getElementById('scoreDisplay').innerText = Math.floor(score);
@@ -354,10 +357,9 @@
         document.getElementById('reviveCostText').innerText = reviveCost;
         document.getElementById('reviveMenu').style.display = 'flex';
     }
-
     window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     initMenu();
 </script>
 </body>
-</html>
+    </html>
