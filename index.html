@@ -421,6 +421,31 @@
             alert("MISSION COMPLETE!\nReward: 🪙" + reward);
         }
     }, 50);
+
+
+    // === DAILY REWARDS SYSTEM ===
+    function checkDailyReward() {
+        const lastClaim = localStorage.getItem('casta_last_claim');
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+        if (!lastClaim || (now - lastClaim) > oneDay) {
+            // It has been more than 24 hours
+            totalCoins += 1000;
+            localStorage.setItem('casta_bank', totalCoins);
+            localStorage.setItem('casta_last_claim', now);
+            
+            // Show the reward message after a tiny delay so the menu can load
+            setTimeout(() => {
+                alert("🎁 DAILY REWARD!\nYou received 🪙1,000 coins!\nCome back tomorrow for more.");
+                initMenu(); // Refresh the coin display on the menu
+            }, 500);
+        }
+    }
+
+    // Run the check when the script loads
+    checkDailyReward();
+    
 </script>
 </body>
 </html>
