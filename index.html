@@ -462,34 +462,33 @@
     // Run the check when the script loads
     checkDailyReward();
 
-// === CHARACTER RARITY UI ===
+// === UNIVERSAL CHARACTER RARITY UI ===
 const rarityUI = document.createElement('div');
 rarityUI.id = 'rarity-display';
-rarityUI.style = "position:fixed; top:10px; left:10px; font-family:Arial; font-weight:bold; font-size:18px; text-shadow: 2px 2px #000; z-index:1000; pointer-events:none;";
+rarityUI.style = "position:fixed; top:20px; left:20px; font-family:Arial, sans-serif; font-weight:bold; font-size:22px; text-shadow: 2px 2px #000; z-index:9999; pointer-events:none;";
 document.body.appendChild(rarityUI);
 
 function updateRarityUI() {
-    const colors = {
-        legendary: "#FFD700", // Gold
-        epic: "#BF00FF",      // Purple
-        rare: "#00CCFF",      // Cyan
-        common: "#FFFFFF"     // White
-    };
+    // This looks for your character variables automatically
+    let idx = (typeof selectedCharacterIndex !== 'undefined') ? selectedCharacterIndex : 0;
+    let charList = (typeof characters !== 'undefined') ? characters : [];
+    
+    if (charList.length === 0 || !charList[idx]) return;
 
-    let idx = selectedCharacterIndex;
-    let name = characters[idx].name;
-    let color = colors.common;
+    let charName = charList[idx].name || "Runner";
+    let color = "#FFFFFF"; 
     let rank = "COMMON";
 
-    if (idx >= 250) { color = colors.legendary; rank = "LEGENDARY"; }
-    else if (idx >= 200) { color = colors.epic; rank = "EPIC"; }
-    else if (idx >= 100) { color = colors.rare; rank = "RARE"; }
+    // Rarity Logic based on the 275 character count
+    if (idx >= 250) { color = "#FFD700"; rank = "LEGENDARY"; } 
+    else if (idx >= 200) { color = "#BF00FF"; rank = "EPIC"; }      
+    else if (idx >= 100) { color = "#00CCFF"; rank = "RARE"; }      
 
     rarityUI.style.color = color;
-    rarityUI.innerHTML = rank + ": " + name;
+    rarityUI.innerHTML = `<span style="font-size:12px; opacity:0.8; display:block;">${rank}</span>${charName}`;
 }
 
-// Update the name every time the game starts or character changes
+// Check every 500ms to update the name
 setInterval(updateRarityUI, 500);
     
 </script>
