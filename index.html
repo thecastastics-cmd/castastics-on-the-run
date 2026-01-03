@@ -462,15 +462,15 @@
     // Run the check when the script loads
     checkDailyReward();
 
-// === UNIVERSAL CHARACTER RARITY UI ===
+// === CHARACTER RARITY SYSTEM ===
 const rarityUI = document.createElement('div');
 rarityUI.id = 'rarity-display';
 rarityUI.style = "position:fixed; top:20px; left:20px; font-family:Arial, sans-serif; font-weight:bold; font-size:22px; text-shadow: 2px 2px #000; z-index:9999; pointer-events:none;";
 document.body.appendChild(rarityUI);
 
 function updateRarityUI() {
-    // This looks for your character variables automatically
-    let idx = (typeof selectedCharacterIndex !== 'undefined') ? selectedCharacterIndex : 0;
+    // This finds your character even if you're just looking in the shop
+    let idx = (typeof shopIndex !== 'undefined') ? shopIndex : (typeof selectedCharacterIndex !== 'undefined' ? selectedCharacterIndex : 0);
     let charList = (typeof characters !== 'undefined') ? characters : [];
     
     if (charList.length === 0 || !charList[idx]) return;
@@ -479,7 +479,6 @@ function updateRarityUI() {
     let color = "#FFFFFF"; 
     let rank = "COMMON";
 
-    // Rarity Logic based on the 275 character count
     if (idx >= 250) { color = "#FFD700"; rank = "LEGENDARY"; } 
     else if (idx >= 200) { color = "#BF00FF"; rank = "EPIC"; }      
     else if (idx >= 100) { color = "#00CCFF"; rank = "RARE"; }      
@@ -488,8 +487,7 @@ function updateRarityUI() {
     rarityUI.innerHTML = `<span style="font-size:12px; opacity:0.8; display:block;">${rank}</span>${charName}`;
 }
 
-// Check every 500ms to update the name
-setInterval(updateRarityUI, 500);
+setInterval(updateRarityUI, 300);
     
 </script>
 </body>
