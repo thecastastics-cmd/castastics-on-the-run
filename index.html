@@ -91,10 +91,15 @@
     ];
 
     const assets = { 
-        road: new Image(), magnet: new Image(), shield: new Image(), 
+        road: new Image(), road2: new Image(), road3: new Image(), 
+        magnet: new Image(), shield: new Image(), 
         multiplier: new Image(), obsLow: new Image(), obsHigh: new Image(), coin: new Image()
     };
-    assets.road.src = 'images/road.png'; assets.magnet.src = 'images/magnet.png';
+    assets.road.src = 'images/road.png';
+    assets.road2.src = 'images/road2.png';
+    assets.road3.src = 'images/road3.png';
+    
+    assets.magnet.src = 'images/magnet.png';
     assets.shield.src = 'images/shield.png'; assets.multiplier.src = 'images/multiplier.png';
     assets.obsLow.src = 'images/obstacle_low.png'; assets.obsHigh.src = 'images/obstacle_high.png';
     assets.coin.src = 'images/coin.png';
@@ -261,13 +266,24 @@
         }
         lastTime = timestamp;
 
-        // Draw Road
-        if(assets.road.complete && assets.road.width > 0) {
-            ctx.drawImage(assets.road, 0, roadScrollY, canvas.width, canvas.height);
-            ctx.drawImage(assets.road, 0, roadScrollY - canvas.height, canvas.width, canvas.height);
-        } else {
-            ctx.fillStyle = '#111'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        // --- START MULTI-STAGE ROAD SYSTEM ---
+        let currentRoad = assets.road; 
+        let stage = Math.floor(score / 10000) % 3; 
+
+        if (stage === 1 && assets.road2.complete) {
+            currentRoad = assets.road2;
+        } else if (stage === 2 && assets.road3.complete) {
+            currentRoad = assets.road3;
         }
+
+        if(currentRoad.complete && currentRoad.width > 0) {
+            ctx.drawImage(currentRoad, 0, roadScrollY, canvas.width, canvas.height);
+            ctx.drawImage(currentRoad, 0, roadScrollY - canvas.height, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = '#111'; 
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+        }
+        // --- END MULTI-STAGE ROAD SYSTEM ---
 
         let targetX = currentLane * (canvas.width / 3) + (canvas.width / 6) - 35;
         visualX += (targetX - visualX) * 0.15;
