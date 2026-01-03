@@ -361,62 +361,66 @@
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     initMenu();
 
-    // ==========================================
-    // IMPROVED MISSION SYSTEM
-    // ==========================================
-    const missionData = {
-        level: parseInt(localStorage.getItem('casta_level')) || 1,
-        progress: 0,
+ // === MISSION SYSTEM V3 ===
+    console.log("Mission System Loading...");
+
+    // 1. Setup Variables
+    const mData = {
+        lvl: parseInt(localStorage.getItem('casta_level')) || 1,
+        prog: 0,
         types: ["JUMP", "SLIDE", "COINS", "POWERUPS"],
         isJumping: false, lastSlide: false, lastPower: null, lastCoins: 0
     };
 
+    // 2. Create UI Element manually so it MUST show up
+    const mUI = document.createElement('div');
+    mUI.id = "mDisplay";
+    mUI.style = "position:fixed; bottom:100px; left:20px; color:#00ffff; z-index:9999; font-family:sans-serif; font-weight:bold; text-shadow:2px 2px #000; pointer-events:none; display:none;";
+    document.body.appendChild(mUI);
+
+    // 3. The Logic Loop
     setInterval(() => {
-        const tracker = document.getElementById('missionTracker');
-        if (gameState !== 'playing' || isPaused) { tracker.innerHTML = ""; return; }
+        // Only show if playing
+        if (typeof gameState !== 'undefined' && gameState === 'playing' && !isPaused) {
+            mUI.style.display = 'block';
+        } else {
+            mUI.style.display = 'none';
+            return;
+        }
 
-        let typeIdx = (missionData.level - 1) % 4;
-        let target = 10 + (missionData.level * 2);
-        let goalText = missionData.types[typeIdx];
+        let typeIdx = (mData.lvl - 1) % 4;
+        let target = 10 + (mData.lvl * 3);
+        let goalText = mData.types[typeIdx];
 
-        // --- IMPROVED JUMP DETECTION ---
-        // If the player is off the ground (negative offset), count it as a jump
+        // JUMP (Checks if player is in air)
         if (typeIdx === 0) {
-            if (playerYOffset < -5 && !missionData.isJumping) {
-                missionData.progress++;
-                missionData.isJumping = true; // Lock it so it only counts ONCE per jump
-            }
-            if (playerYOffset === 0) {
-                missionData.isJumping = false; // Reset when they land
-            }
+            if (playerYOffset < -5 && !mData.isJumping) { mData.prog++; mData.isJumping = true; }
+            if (playerYOffset === 0) mData.isJumping = false;
         }
+        // SLIDE
+        if (typeIdx === 1 && isSliding && !mData.lastSlide) mData.prog++;
+        mData.lastSlide = isSliding;
+        // COINS
+        if (typeIdx === 2 && coins > mData.lastCoins) { mData.prog += (coins - mData.lastCoins); }
+        mData.lastCoins = coins;
+        // POWERUPS
+        if (typeIdx === 3 && activePower !== mData.lastPower && activePower !== null) mData.prog++;
+        mData.lastPower = activePower;
 
-        // --- SLIDE DETECTION ---
-        if (typeIdx === 1 && isSliding && !missionData.lastSlide) missionData.progress++;
-        missionData.lastSlide = isSliding;
+        // Update Text
+        mUI.innerHTML = `LVL ${mData.lvl} MISSION: ${goalText}<br>PROGRESS: ${mData.prog} / ${target}`;
 
-        // --- COIN DETECTION ---
-        if (typeIdx === 2 && coins > missionData.lastCoins) {
-            missionData.progress += (coins - missionData.lastCoins);
-        }
-        missionData.lastCoins = coins;
-
-        // --- POWERUP DETECTION ---
-        if (typeIdx === 3 && activePower !== missionData.lastPower && activePower !== null) missionData.progress++;
-        missionData.lastPower = activePower;
-
-        tracker.innerHTML = `MISSION LVL ${missionData.level}: ${goalText} ${target}<br>PROG: ${missionData.progress}/${target}`;
-
-        if (missionData.progress >= target) {
-            let reward = missionData.level * 100;
+        // Win Condition
+        if (mData.prog >= target) {
+            let reward = mData.lvl * 100;
             totalCoins += reward;
-            missionData.level++;
-            missionData.progress = 0;
-            localStorage.setItem('casta_level', missionData.level);
+            mData.lvl++;
+            mData.prog = 0;
+            localStorage.setItem('casta_level', mData.lvl);
             localStorage.setItem('casta_bank', totalCoins);
-            alert(`MISSION COMPLETE!\nLVL ${missionData.level-1} DONE.\nREWARD: 🪙${reward}`);
+            alert("MISSION COMPLETE!\nReward: 🪙" + reward);
         }
-    }, 50); // Increased speed to 50ms for better accuracy
+    }, 50);
 </script>
 </body>
 </html>
