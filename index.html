@@ -461,6 +461,36 @@
 
     // Run the check when the script loads
     checkDailyReward();
+
+// === CHARACTER RARITY UI ===
+const rarityUI = document.createElement('div');
+rarityUI.id = 'rarity-display';
+rarityUI.style = "position:fixed; top:10px; left:10px; font-family:Arial; font-weight:bold; font-size:18px; text-shadow: 2px 2px #000; z-index:1000; pointer-events:none;";
+document.body.appendChild(rarityUI);
+
+function updateRarityUI() {
+    const colors = {
+        legendary: "#FFD700", // Gold
+        epic: "#BF00FF",      // Purple
+        rare: "#00CCFF",      // Cyan
+        common: "#FFFFFF"     // White
+    };
+
+    let idx = selectedCharacterIndex;
+    let name = characters[idx].name;
+    let color = colors.common;
+    let rank = "COMMON";
+
+    if (idx >= 250) { color = colors.legendary; rank = "LEGENDARY"; }
+    else if (idx >= 200) { color = colors.epic; rank = "EPIC"; }
+    else if (idx >= 100) { color = colors.rare; rank = "RARE"; }
+
+    rarityUI.style.color = color;
+    rarityUI.innerHTML = rank + ": " + name;
+}
+
+// Update the name every time the game starts or character changes
+setInterval(updateRarityUI, 500);
     
 </script>
 </body>
