@@ -6,264 +6,205 @@
     <title>Castastics Master Runner</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; }
-        
-        #gameUI { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; width: 90%; }
-        #levelBanner { color: #00ffff; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; display: inline-block; margin-bottom: 5px; border: 1px solid #00ffff; }
-        
-        #levelUpMsg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); color: #00ffff; font-size: 40px; z-index: 50; text-shadow: 0 0 20px #00ffff; pointer-events: none; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s; opacity: 0; }
-        #levelUpMsg.show { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-
-        #menu, #reviveMenu, #previewer, #dailyRewardPopup { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; text-align: center; }
-        #reviveMenu, #previewer, #dailyRewardPopup { display: none; z-index: 25; }
-        
-        #menuLevelInfo { background: #222; border: 1px solid #00ffff; padding: 5px 15px; border-radius: 20px; color: #00ffff; font-size: 12px; margin-bottom: 10px; }
-        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; max-height: 35vh; overflow-y: scroll; padding: 10px; border: 2px solid #444; background: #111; width: 90%; border-radius: 10px; }
-        .char-card { border: 2px solid #444; padding: 8px; text-align: center; border-radius: 8px; background: #222; font-size: 10px; }
-        .char-card.selected { border-color: #00ff00; background: #004400; }
-        
-        #largeImg { width: 180px; height: 180px; object-fit: contain; margin: 20px 0; border: 4px solid #00ff00; border-radius: 15px; background: #111; padding: 10px; }
-        button { padding: 18px 40px; font-size: 22px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; margin: 5px; }
+        #gameUI { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; width: 100%; }
+        #menu, #reviveMenu, #previewer, #dailyPop { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; text-align: center; }
+        #reviveMenu, #previewer, #dailyPop { display: none; z-index: 100; }
+        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 45vh; overflow-y: scroll; padding: 15px; border: 2px solid #444; background: #111; width: 85%; border-radius: 15px; pointer-events: auto; }
+        .char-card { border: 2px solid #444; padding: 10px; text-align: center; border-radius: 10px; background: #222; transition: 0.2s; }
+        .char-card.selected { border-color: #00ff00; background: #004400; box-shadow: 0 0 10px #00ff00; }
+        .char-card img { width: 100%; height: 50px; object-fit: contain; }
+        #largeImgBox { width: 180px; height: 180px; margin: 15px 0; border: 4px solid #00ff00; border-radius: 20px; background: #111; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #largeImgBox img { width: 90%; height: 90%; object-fit: contain; }
+        button { padding: 18px 40px; font-size: 20px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; margin: 5px; pointer-events: auto; }
         .secondary-btn { background: #555; color: white; font-size: 16px; padding: 10px 25px; }
-        
-        #muteBtn { position: absolute; bottom: 20px; right: 20px; background: #333; color: white; border-radius: 50%; width: 45px; height: 45px; border: none; z-index: 30; }
-        .ui-controls { position: absolute; top: 15px; right: 15px; z-index: 30; display: flex; flex-direction: column; gap: 5px; pointer-events: auto; }
-        .small-ui-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 12px; border-radius: 5px; font-size: 12px; }
+        #levelBanner { color: #00ffff; font-size: 14px; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px; border: 1px solid #00ffff; }
     </style>
 </head>
 <body>
 
 <div id="gameUI">
-    <div id="levelBanner">LEVEL <span id="currentLevel">1</span>: <span id="taskDesc">Loading...</span></div>
-    <div style="color: #ffd700; font-size: 24px;">🪙 <span id="coinCount">0</span></div>
-    <div style="font-size: 14px; opacity:0.8; color: #00ff00;">BEST: <span id="highScoreDisplay">0</span></div>
-    <div style="font-size: 16px;">SCORE: <span id="scoreDisplay">0</span></div>
-    <div id="powerNotify" style="font-weight:bold; margin-top:5px; text-shadow: 0 0 5px #000;"></div>
-    
-    <div class="ui-controls">
-        <button class="small-ui-btn" onclick="togglePause()" id="pauseBtn">PAUSE</button>
-        <button class="small-ui-btn" onclick="exitToMenu()" id="exitBtn" style="display:none; background:rgba(255,0,0,0.5)">EXIT</button>
-    </div>
+    <div id="levelBanner">LVL <span id="curLvl">1</span>: <span id="taskText">Loading...</span></div>
+    <div style="color: #ffd700; font-size: 28px;">🪙 <span id="coinCount">0</span></div>
+    <div style="font-size: 18px;">SCORE: <span id="scoreDisplay">0</span></div>
 </div>
 
-<div id="levelUpMsg">LEVEL UP!</div>
-
-<div id="dailyRewardPopup">
-    <h1 style="color:#ffd700">DAILY REWARD!</h1>
-    <div style="font-size: 60px;">🪙</div>
-    <p>Welcome back! You claimed 1,000 coins.</p>
-    <button onclick="closeDailyPopup()">CLAIM</button>
+<div id="dailyPop">
+    <h1 style="color:#ffd700;">DAILY REWARD</h1>
+    <h2 style="font-size:40px;">+🪙500</h2>
+    <button onclick="claimDaily()">CLAIM</button>
 </div>
 
 <div id="menu">
-    <h1 style="color:#00ff00; margin: 0; font-style: italic; cursor: pointer; pointer-events: auto;" onclick="checkCheat()">CASTASTICS</h1>
-    <div id="menuLevelInfo">RANK: MASTER LEVEL <span id="menuLvlNum">1</span></div>
-    <div style="color:#ffd700; margin: 5px 0;">BANK: 🪙 <span id="totalCoinsDisplay">0</span></div>
+    <h1 style="color:#00ff00; font-style: italic; margin-bottom: 5px;">CASTASTICS</h1>
+    <div style="color:#ffd700; margin-bottom: 10px;">BANK: 🪙 <span id="totalCoinsDisplay">0</span></div>
     <div class="char-grid" id="charGrid"></div>
-    <button onclick="startGame()">RUN!</button>
+    <button onclick="startGame()">START RUN!</button>
 </div>
 
 <div id="previewer">
-    <h2 id="previewName">CHARACTER NAME</h2>
-    <div id="abilityText" style="color:#00ffff; font-size:12px; margin-bottom:5px;"></div>
-    <img id="largeImg" src="" alt="Preview" onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='">
-    <div id="previewStatus" style="margin-bottom: 20px; font-weight: bold;">COST: 🪙100</div>
-    <button id="previewActionBtn" onclick="handlePreviewAction()">SELECT</button>
+    <h2 id="previewName">NAME</h2>
+    <div id="abilityText" style="color:#00ffff; font-size:14px; min-height: 20px;"></div>
+    <div id="largeImgBox"></div>
+    <div id="previewStatus" style="margin-bottom: 15px; font-weight: bold; font-size: 20px;"></div>
+    <button id="previewActionBtn">SELECT</button>
     <button class="secondary-btn" onclick="closePreviewer()">BACK</button>
 </div>
 
 <div id="reviveMenu">
     <h2 style="color:#ffd700;">CRASHED!</h2>
-    <p>Revive for 🪙 <span id="reviveCostText">5</span>?</p>
-    <button onclick="revivePlayer()">REVIVE</button>
-    <button class="secondary-btn" onclick="endGamePermanently()">NO THANKS</button>
+    <button onclick="revivePlayer()">REVIVE (🪙<span id="revCost">5</span>)</button>
+    <button class="secondary-btn" onclick="location.reload()">NO THANKS</button>
 </div>
 
-<button id="muteBtn" onclick="toggleMute()">🔊</button>
 <canvas id="gameCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const names = ["David Artsy", "Smacken", "Smacky", "A-Bomb", "Dennis The Menace", "Greg Heffley", "Nate Wright", "Kool Kid", "Girl Stick", "Hulk Ninja", "Master Stick", "Bee", "Inky", "Lego Spy Girl", "Circle", "Square", "Triangle", "Rectangle", "Lego Jet-Man", "Lego Bubble Boy", "Mrs. Fruitó", "Wheezy", "Whizzy", "Noobie", "Boxlunch Killer/Paul", "Joel", "Jet-Man", "Spy Girl", "The Artist", "Art Girl", "Bubble Boy", "Stronge", "James The Watch", "Gold Chain/Chinea", "Queen Bee/Sabrina", "Key/Jordan", "Lock/Harry", "Danny/Klipper Knight", "Dart", "Screw", "Speedy", "Zipper", "Radio", "Silver Chain", "Steele", "Scissors/Silvia", "Silver Watch", "Jesus", "Santa", "Max", "Sam", "White", "Black", "Rex", "Trixie", "Jace", "Rowan", "Lily", "Mia", "Petria", "Stampy", "Blitz Bot", "Velo", "DenisDaily", "Snake", "Walrus", "Fishy", "Dr. Evil Baby Head", "Blue", "Joel/Box Boy", "Mr. Fruitó", "Mud Man", "Yellow", "Catty", "Exterminator", "Kevin Duplop/Bug Man", "Carla and Boyo", "Green", "BOX-Man", "Jenna the Haxter", "Pollo", "Memo", "Dustin", "Terryann", "Balloon Man", "Toy Maker", "Lola", "Oscar", "Mia", "Lego Stronge", "Cheese Man", "Chase", "Squishy", "Star", "Rock Man", "Lego The Artist", "Crab", "Pedro", "Chranos", "Grymph", "The Admin", "Unstoppable Metal Beast", "Vanny/Swords Girl", "Super Spy Nick", "Bacon Hair Ryan", "Ian Alleyne", "1999 Jet-Man", "1999 Spy Girl", "1999 The Artist", "1999 Stronge", "1999 Bubble Man", "Jaquan/Spider Glue", "Nate Skywalker", "Brian/The Guitarist", "Spider Guy", "Shiann Padme", "Glue", "Talking Angela", "Alex/Big Foot", "Harry/Covered", "Lion Man", "Ishmell/Oh Mikkey Giggey Goo", "Roger/Car Man/Tank", "Jeremy/Stretcho", "Ian/Spider Glue", "Jade/Moon Witch", "Dark Shadow", "Sanjay/Slug Man", "Zach/SwordsMan", "Darker", "Black Beard", "Angela", "Ginger", "Tom", "Jerry", "Tom", "Spongebob RectanglePants", "Jake", "Annie", "David", "Chicken", "Jake (Subway Surfers)", "Venom", "Spider-Man", "Pac-Man", "Whom Whom Head/Whomie", "Bat Thumb", "Thumby", "BlackBeard", "Donnie", "Husky", "Ella", "Carmen (Lizard)", "Sabrina", "Adrien", "Toodos", "Pinching Girl", "Gothic Shadow", "Super Noob", "Kelian/Arrow Boy", "Flame", "Light", "Ice Jake", "The Artist (Jeremy)", "Spy Girl (Whitney)", "Inferno", "SwordsMan (Eren)", "Mega Boy (Adam)", "Johnny Jerickson/Fire Pen", "Ezekiel Johnson/Space Pen", "Ronal King/Unbreakable Pen", "Ivan Dél Rio/Ice Pen", "Jenny Herickson/Space Princess", "Gabby Charles/Pendi Queen", "Buzz Lightyear", "Sheriff Woody", "Bella The Pig", "Goofy", "Marty/Speed Demon", "Joey Bear", "Carmen", "Super Magnet", "Three", "Hannah", "Kenny", "Little X Jr.", "Roger/Richard", "Ice", "Stephen", "Globe", "Frank The Pencil", "Ruler", "Eddie", "Blue", "Sabrina", "Big Greene", "Ice", "Sammy", "Alocate Blacky", "Pinky Nokia", "Shred", "Hand", "Pillow", "Maxwell", "Coffee", "Tom the TV", "Ella the Lamp", "Sam the Fan", "Pebbles", "Spots", "Wrench", "Lego Bubble Man", "General Ian", "A-Boy", "Adesh", "Candy Girl", "Butthurst", "Clocky", "Leafy", "Father Shell", "Flowery", "Bushy", "Mother Shell", "Girl Shell", "Boy Shell", "Black Rubberband", "Blue Rubberband", "Pink Rubberband", "Soap", "Sponge", "Boxy the Meep", "Randy the Cardboard", "Slippers #1", "Slippers #2", "Black Perfume", "Klipper", "Klipper's Wife", "Evil Klipper", "Clothy", "Randy", "Darkness", "Mr. Money Mouse", "Black Marker", "Cover", "Black Cover", "Grandpa Mud-Man", "Ray", "Billy", "Lizzy", "Butterclay", "Messi", "Renii", "Black", "Blue", "Energy Pen Ninja", "Air Pen Ninja", "Earth Pen Ninja", "Lightning Pen Ninja", "Ice Pen Ninja", "Fire Pen Ninja", "Master Ian", "Dark Vogue", "Rocket Launcher", "Bounce", "Toothbrush", "Toothpaste", "Thirsty", "Brian The Fool", "Stephen Jeffers", "Mcseen Jeffers", "Doctor Deadpool", "Godzilla", "Point", "Oddsketeer Cat", "Gamer"];
 
-    const castaNames = ["David Artsy", "Smacken", "Smacky", "A-Bomb", "Dennis The Menace", "Greg Heffley", "Nate Wright", "Kool Kid", "Girl Stick", "Hulk Ninja", "Master Stick", "Bee", "Inky", "Lego Spy Girl", "Circle", "Square", "Triangle", "Rectangle", "Lego Jet-Man", "Lego Bubble Boy", "Mrs. Fruitó", "Wheezy", "Whizzy", "Noobie", "Boxlunch Killer/Paul", "Joel", "Jet-Man", "Spy Girl", "The Artist", "Art Girl", "Bubble Boy", "Stronge", "James The Watch", "Gold Chain/Chinea", "Queen Bee/Sabrina", "Key/Jordan", "Lock/Harry", "Danny/Klipper Knight", "Dart", "Screw", "Speedy", "Zipper", "Radio", "Silver Chain", "Steele", "Scissors/Silvia", "Silver Watch", "Jesus", "Santa", "Max", "Sam", "White", "Black", "Rex", "Trixie", "Jace", "Rowan", "Lily", "Mia", "Petria", "Stampy", "Blitz Bot", "Velo", "DenisDaily", "Snake", "Walrus", "Fishy", "Dr. Evil Baby Head", "Blue", "Joel/Box Boy", "Mr. Fruitó", "Mud Man", "Yellow", "Catty", "Exterminator", "Kevin Duplop/Bug Man", "Carla and Boyo", "Green", "BOX-Man", "Jenna the Haxter", "Pollo", "Memo", "Dustin", "Terryann", "Balloon Man", "Toy Maker", "Lola", "Oscar", "Mia", "Lego Stronge", "Cheese Man", "Chase", "Squishy", "Star", "Rock Man", "Lego The Artist", "Crab", "Pedro", "Chranos", "Grymph", "The Admin", "Unstoppable Metal Beast", "Vanny/Swords Girl", "Super Spy Nick", "Bacon Hair Ryan", "Ian Alleyne", "1999 Jet-Man", "1999 Spy Girl", "1999 The Artist", "1999 Stronge", "1999 Bubble Man", "Jaquan/Spider Glue", "Nate Skywalker", "Brian/The Guitarist", "Spider Guy", "Shiann Padme", "Glue", "Talking Angela", "Alex/Big Foot", "Harry/Covered", "Lion Man", "Ishmell/Oh Mikkey Giggey Goo", "Roger/Car Man/Tank", "Jeremy/Stretcho", "Ian/Spider Glue", "Jade/Moon Witch", "Dark Shadow", "Sanjay/Slug Man", "Zach/SwordsMan", "Darker", "Black Beard", "Angela", "Ginger", "Tom", "Jerry", "Tom", "Spongebob RectanglePants", "Jake", "Annie", "David", "Chicken", "Jake (Subway Surfers)", "Venom", "Spider-Man", "Pac-Man", "Whom Whom Head/Whomie", "Bat Thumb", "Thumby", "BlackBeard", "Donnie", "Husky", "Ella", "Carmen (Lizard)", "Sabrina", "Adrien", "Toodos", "Pinching Girl", "Gothic Shadow", "Super Noob", "Kelian/Arrow Boy", "Flame", "Light", "Ice Jake", "The Artist (Jeremy)", "Spy Girl (Whitney)", "Inferno", "SwordsMan (Eren)", "Mega Boy (Adam)", "Johnny Jerickson/Fire Pen", "Ezekiel Johnson/Space Pen", "Ronal King/Unbreakable Pen", "Ivan Dél Rio/Ice Pen", "Jenny Herickson/Space Princess", "Gabby Charles/Pendi Queen", "Buzz Lightyear", "Sheriff Woody", "Bella The Pig", "Goofy", "Marty/Speed Demon", "Joey Bear", "Carmen", "Super Magnet", "Three", "Hannah", "Kenny", "Little X Jr.", "Roger/Richard", "Ice", "Stephen", "Globe", "Frank The Pencil", "Ruler", "Eddie", "Blue", "Sabrina", "Big Greene", "Ice", "Sammy", "Alocate Blacky", "Pinky Nokia", "Shred", "Hand", "Pillow", "Maxwell", "Coffee", "Tom the TV", "Ella the Lamp", "Sam the Fan", "Pebbles", "Spots", "Wrench", "Lego Bubble Man", "General Ian", "A-Boy", "Adesh", "Candy Girl", "Butthurst", "Clocky", "Leafy", "Father Shell", "Flowery", "Bushy", "Mother Shell", "Girl Shell", "Boy Shell", "Black Rubberband", "Blue Rubberband", "Pink Rubberband", "Soap", "Sponge", "Boxy the Meep", "Randy the Cardboard", "Slippers #1", "Slippers #2", "Black Perfume", "Klipper", "Klipper's Wife", "Evil Klipper", "Clothy", "Randy", "Darkness", "Mr. Money Mouse", "Black Marker", "Cover", "Black Cover", "Grandpa Mud-Man", "Ray", "Billy", "Lizzy", "Butterclay", "Messi", "Renii", "Black", "Blue", "Energy Pen Ninja", "Air Pen Ninja", "Earth Pen Ninja", "Lightning Pen Ninja", "Ice Pen Ninja", "Fire Pen Ninja", "Master Ian", "Dark Vogue", "Rocket Launcher", "Bounce", "Toothbrush", "Toothpaste", "Thirsty", "Brian The Fool", "Stephen Jeffers", "Mcseen Jeffers", "Doctor Deadpool", "Godzilla", "Point", "Oddsketeer Cat", "Gamer"];
+    let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
+    let playerLevel = parseInt(localStorage.getItem('casta_lvl')) || 1;
+    let currentTask = { type: 'coin', goal: 10, count: 0 };
+    let gameState = 'menu', score = 0, coins = 0, speed = 10, roadY = 0, lane = 1, visualX = 0, pY = 0, jumpV = 0, isSlide = false, slideT = 0;
+    let entities = [], reviveCost = 5;
 
-    const assets = { road1: new Image(), road2: new Image(), road3: new Image(), magnet: new Image(), shield: new Image(), multiplier: new Image(), obsLow: new Image(), obsHigh: new Image(), coin: new Image() };
-    assets.road1.src = 'images/road.png'; assets.road2.src = 'images/road2.png'; assets.road3.src = 'images/road3.png';
-    assets.magnet.src = 'images/magnet.png'; assets.shield.src = 'images/shield.png'; assets.multiplier.src = 'images/multiplier.png';
-    assets.obsLow.src = 'images/obstacle_low.png'; assets.obsHigh.src = 'images/obstacle_high.png'; assets.coin.src = 'images/coin.png';
-
-    const sounds = { 
-        bg: new Audio('images/bg_music.mp3'), 
-        magnet: new Audio('images/powerup_magnet.mp3'), 
-        shield: new Audio('images/powerup_shield.mp3'), 
-        multiplier: new Audio('images/powerup_multiplier.mp3'), 
-        death: new Audio('images/death.mp3'), 
-        coin: new Audio('images/coin_ping.mp3'), 
-        oink: new Audio('images/oink.mp3'),
-        lvlUp: new Audio('images/level_up.mp3') // New Level Up Sound File
-    };
+    const assets = { road: new Image(), coin: new Image() };
+    assets.road.src = 'images/road.png'; assets.coin.src = 'images/coin.png';
+    const sounds = { bg: new Audio('images/bg_music.mp3'), coin: new Audio('images/coin_ping.mp3'), oink: new Audio('images/oink.mp3') };
     sounds.bg.loop = true;
 
-    let isMuted = false, gameState = 'menu', score = 0, coins = 0, lastTime = 0, totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0, highScore = parseInt(localStorage.getItem('casta_high')) || 0;
-    let currentLane = 1, visualX = 0, speed = 8, roadScrollY = 0, entities = [], runCycle = 0;
-    let powerTimer = 0, activePower = null, playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0, reviveCost = 5, isPaused = false, currentPreviewingChar = null;
+    let characters = names.map((n, i) => ({ id: i+1, name: n, cost: i===0?0:(i+1)*100, unlocked: i===0||localStorage.getItem('unl_'+(i+1)) }));
+    let selected = characters[0];
 
-    let playerLevel = parseInt(localStorage.getItem('casta_level')) || 1;
-    let taskProgress = 0;
-    let currentTask = { type: 'coin', goal: 10, desc: "Collect 10 coins" };
-
-    function initLevelTask() {
-        if(playerLevel > 75) {
-            currentTask = { type: 'none', goal: 999999, desc: "MAX LEVEL REACHED!" };
-            updateLevelUI(); return;
-        }
-        const types = ['coin', 'jump', 'slide', 'power'];
-        const type = types[Math.floor((playerLevel - 1) / 3) % 4]; 
-        const difficulty = 1 + Math.floor(playerLevel / 4);
-        if(type === 'coin') currentTask = { type, goal: 15 * difficulty, desc: `Collect ${15 * difficulty} coins` };
-        else if(type === 'jump') currentTask = { type, goal: 8 * difficulty, desc: `Jump ${8 * difficulty} times` };
-        else if(type === 'slide') currentTask = { type, goal: 8 * difficulty, desc: `Slide ${8 * difficulty} times` };
-        else currentTask = { type, goal: 3 * difficulty, desc: `Get ${3 * difficulty} powerups` };
-        taskProgress = 0; updateLevelUI();
-    }
-
-    function updateLevelUI() {
-        document.getElementById('currentLevel').innerText = playerLevel;
-        document.getElementById('menuLvlNum').innerText = playerLevel;
-        document.getElementById('taskDesc').innerText = `${currentTask.desc} (${taskProgress}/${currentTask.goal})`;
-    }
-
-    function checkTask(type) {
-        if(gameState !== 'playing' || playerLevel > 75) return;
-        if(currentTask.type === type) {
-            taskProgress++;
-            if(taskProgress >= currentTask.goal) {
-                playerLevel++;
-                totalCoins += (1000 + (playerLevel * 50)); 
-                localStorage.setItem('casta_level', playerLevel);
-                localStorage.setItem('casta_bank', totalCoins);
-                showLevelUpAnim();
-                initLevelTask();
-            }
-            updateLevelUI();
-        }
-    }
-
-    function showLevelUpAnim() {
-        const el = document.getElementById('levelUpMsg');
-        el.classList.add('show');
-        if(!isMuted) { sounds.lvlUp.currentTime = 0; sounds.lvlUp.play().catch(()=>{}); }
-        setTimeout(() => el.classList.remove('show'), 2000);
-    }
-
-    function checkDailyReward() {
-        const lastClaim = localStorage.getItem('casta_last_daily');
-        const now = Date.now();
-        if(!lastClaim || (now - parseInt(lastClaim)) > 86400000) { document.getElementById('dailyRewardPopup').style.display = 'flex'; }
-    }
-
-    function closeDailyPopup() {
-        totalCoins += 1000; localStorage.setItem('casta_bank', totalCoins);
-        localStorage.setItem('casta_last_daily', Date.now().toString());
-        document.getElementById('dailyRewardPopup').style.display = 'none'; initMenu();
-    }
-
-    let characters = [];
-    for(let i=1; i<=275; i++){
-        characters.push({ id: i, name: castaNames[i-1] || `Casta #${i}`, imgSrc: `images/casta${i}.png`, img: null, cost: i===1 ? 0 : i*100, unlocked: i===1 || localStorage.getItem('unlocked_'+i) === 'true', color: `hsl(${i*37}, 70%, 50%)` });
-    }
-    let selectedChar = characters[0];
-    selectedChar.img = new Image(); selectedChar.img.src = selectedChar.imgSrc;
-
-    function openPreviewer(char) {
-        currentPreviewingChar = char;
+    // --- PREVIEWER LOGIC ---
+    function openPreview(char) {
+        selected = char;
         document.getElementById('previewName').innerText = char.name;
-        document.getElementById('largeImg').src = char.imgSrc;
-        const ability = document.getElementById('abilityText');
-        if(char.name === "Super Magnet") ability.innerText = "⭐ ABILITY: PERMANENT MAGNET";
-        else if(char.name === "Bella The Pig") ability.innerText = "⭐ ABILITY: 2X COINS & OINK!";
-        else ability.innerText = "";
+        document.getElementById('abilityText').innerText = (char.name==="Bella The Pig") ? "⭐ 2X COINS & OINK!" : (char.name==="Super Magnet" ? "⭐ PERMANENT MAGNET" : "");
+        document.getElementById('largeImgBox').innerHTML = `<img src="images/casta${char.id}.png" onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='">`;
+        
         const btn = document.getElementById('previewActionBtn');
         const status = document.getElementById('previewStatus');
-        if(char.unlocked) { status.innerText = "UNLOCKED"; status.style.color = "#00ff00"; btn.innerText = "SELECT"; }
-        else { status.innerText = `COST: 🪙${char.cost}`; status.style.color = "#ffd700"; btn.innerText = "BUY"; }
+        if(char.unlocked) {
+            status.innerText = "OWNED"; status.style.color = "#0f0";
+            btn.innerText = "SELECT"; btn.onclick = () => { closePreviewer(); initMenu(); };
+        } else {
+            status.innerText = `COST: 🪙${char.cost}`; status.style.color = "#ffd700";
+            btn.innerText = "BUY"; btn.onclick = () => {
+                if(totalCoins >= char.cost) {
+                    totalCoins -= char.cost; char.unlocked = true;
+                    localStorage.setItem('unl_'+char.id, 'true');
+                    localStorage.setItem('casta_bank', totalCoins);
+                    openPreview(char); initMenu();
+                } else { alert("Not enough coins!"); }
+            };
+        }
         document.getElementById('previewer').style.display = 'flex';
     }
 
-    function handlePreviewAction() {
-        const char = currentPreviewingChar;
-        if(char.unlocked) { selectedChar = char; if(!char.img) { char.img = new Image(); char.img.src = char.imgSrc; } closePreviewer(); initMenu(); }
-        else if(totalCoins >= char.cost) { totalCoins -= char.cost; char.unlocked = true; localStorage.setItem('unlocked_'+char.id, 'true'); localStorage.setItem('casta_bank', totalCoins); openPreviewer(char); initMenu(); }
-        else { alert("NOT ENOUGH COINS!"); }
-    }
-
     function closePreviewer() { document.getElementById('previewer').style.display = 'none'; }
-    function checkCheat() { const code = prompt("ENTER CODE:"); if(code === "CAU75") { characters.forEach(c => { c.unlocked = true; localStorage.setItem('unlocked_'+c.id, 'true'); }); totalCoins += 99999; localStorage.setItem('casta_bank', totalCoins); alert("ALL CHARACTERS UNLOCKED!"); initMenu(); } }
 
     function initMenu() {
-        const grid = document.getElementById('charGrid'); grid.innerHTML = '';
         document.getElementById('totalCoinsDisplay').innerText = totalCoins;
-        document.getElementById('highScoreDisplay').innerText = Math.floor(highScore);
-        document.getElementById('menuLvlNum').innerText = playerLevel;
+        const grid = document.getElementById('charGrid'); grid.innerHTML = '';
         characters.forEach(c => {
             const card = document.createElement('div');
-            card.className = `char-card ${selectedChar.id===c.id?'selected':''}`;
-            card.innerHTML = `<div style="font-size: 8px; color: #00ff00; margin-bottom: 2px; overflow: hidden; white-space: nowrap;">${c.name}</div><div style="width:40px;height:40px;background:${c.color};margin:auto;border-radius:4px;overflow:hidden;"><img src="${c.imgSrc}" loading="lazy" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';"></div>`;
-            card.onclick = () => openPreviewer(c);
+            card.className = `char-card ${selected.id===c.id?'selected':''}`;
+            card.innerHTML = `<img src="images/casta${c.id}.png" onerror="this.style.background='#333'"><div style="font-size:9px;margin-top:5px;">${c.name}</div>`;
+            card.onclick = () => openPreview(c);
             grid.appendChild(card);
         });
     }
 
-    function togglePause() {
-        if(gameState !== 'playing') return;
-        isPaused = !isPaused;
-        document.getElementById('pauseBtn').innerText = isPaused ? 'RESUME' : 'PAUSE';
-        document.getElementById('exitBtn').style.display = isPaused ? 'block' : 'none';
-        if(isPaused) sounds.bg.pause(); else if(!isMuted) sounds.bg.play().catch(()=>{});
+    function genTask() {
+        const t = ['coin', 'jump', 'slide'];
+        currentTask = { type: t[Math.floor(Math.random()*3)], goal: 10 + (playerLevel*2), count: 0 };
+        document.getElementById('curLvl').innerText = playerLevel;
+        document.getElementById('taskText').innerText = `${currentTask.type.toUpperCase()} ${currentTask.count}/${currentTask.goal}`;
     }
-
-    function exitToMenu() {
-        isPaused = false;
-        document.getElementById('exitBtn').style.display = 'none';
-        document.getElementById('pauseBtn').innerText = 'PAUSE';
-        endGamePermanently();
-    }
-
-    function toggleMute() { isMuted = !isMuted; Object.values(sounds).forEach(s => s.muted = isMuted); document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊'; }
 
     function startGame() {
         document.getElementById('menu').style.display = 'none';
-        score = 0; coins = 0; entities = []; currentLane = 1; speed = 8;
-        visualX = (canvas.width / 3) + (canvas.width / 6) - 35;
-        powerTimer = 0; activePower = null; playerYOffset = 0; reviveCost = 5; isPaused = false;
-        initLevelTask();
-        lastTime = performance.now();
-        if(!isMuted) { sounds.bg.currentTime = 0; sounds.bg.play().catch(()=>{}); if(selectedChar.name === "Bella The Pig") sounds.oink.play().catch(()=>{}); }
-        gameState = 'playing'; update();
+        gameState = 'playing'; score = 0; coins = 0; entities = []; lane = 1; speed = 10;
+        sounds.bg.play().catch(()=>{});
+        genTask(); loop();
     }
 
-    function revivePlayer() {
-        if (totalCoins >= reviveCost) { totalCoins -= reviveCost; localStorage.setItem('casta_bank', totalCoins); reviveCost *= 2; document.getElementById('reviveMenu').style.display = 'none'; entities = []; gameState = 'playing'; if(!isMuted) sounds.bg.play().catch(()=>{}); lastTime = performance.now(); update(); }
-        else { alert("Not enough coins!"); }
-    }
-
-    function endGamePermanently() {
-        document.getElementById('reviveMenu').style.display = 'none';
-        document.getElementById('menu').style.display = 'flex';
-        if(score > highScore) { highScore = score; localStorage.setItem('casta_high', highScore); }
-        totalCoins += coins; localStorage.setItem('casta_bank', totalCoins);
-        gameState = 'menu'; initMenu();
-    }
-
-    let tStart = {x:0, y:0};
-    window.addEventListener('touchstart', e => { tStart.x = e.touches[0].clientX; tStart.y = e.touches[0].clientY; }, {passive: false});
-    window.addEventListener('touchend', e => {
-        if(gameState !== 'playing' || isPaused) return;
-        let dx = e.changedTouches[0].clientX - tStart.x, dy = e.changedTouches[0].clientY - tStart.y;
-        if(Math.abs(dx) > Math.abs(dy)){
-            if(dx > 30 && currentLane < 2) currentLane++;
-            if(dx < -30 && currentLane > 0) currentLane--;
-        } else {
-            if(dy < -30 && playerYOffset === 0) { playerJumpVal = 22; checkTask('jump'); }
-            if(dy > 30) { isSliding = true; slideTimer = 35; if(playerYOffset < 0) playerJumpVal = -15; checkTask('slide'); } 
+    function loop() {
+        if(gameState !== 'playing') return;
+        ctx.clearRect(0,0,canvas.width, canvas.height);
         
+        // Road Logic
+        ctx.fillStyle = (score > 10000) ? "#111" : "#222"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        roadY += speed; if(roadY > canvas.height) roadY = 0;
+        ctx.drawImage(assets.road, 0, roadY, canvas.width, canvas.height);
+        ctx.drawImage(assets.road, 0, roadY - canvas.height, canvas.width, canvas.height);
+
+        // Player movement
+        let targetX = lane * (canvas.width/3) + (canvas.width/6) - 30;
+        visualX += (targetX - visualX) * 0.2;
+        if(jumpV !== 0 || pY < 0) { pY -= jumpV; jumpV -= 1.5; if(pY > 0) { pY = 0; jumpV = 0; } }
+        if(isSlide) { slideT--; if(slideT <= 0) isSlide = false; }
+
+        // Spawn items
+        if(Math.random() < 0.05) {
+            let l = Math.floor(Math.random()*3);
+            entities.push({ x: l*(canvas.width/3)+(canvas.width/6)-20, y: -50, t: Math.random()>0.8?'c':'o' });
+        }
+
+        entities.forEach((e, i) => {
+            e.y += speed;
+            if(selected.name === "Super Magnet" && e.t === 'c') e.x += (visualX - e.x) * 0.15;
+            if(e.t === 'c') ctx.drawImage(assets.coin, e.x, e.y, 40, 40);
+            else { ctx.fillStyle = 'red'; ctx.fillRect(e.x, e.y, 40, 40); }
+
+            // Collision
+            if(Math.abs(e.x - visualX) < 40 && e.y > canvas.height - 180 + pY && e.y < canvas.height - 80) {
+                if(e.t === 'c') {
+                    let m = (selected.name === "Bella The Pig") ? 2 : 1;
+                    coins += m; 
+                    if(currentTask.type === 'coin') { currentTask.count++; if(currentTask.count >= currentTask.goal) { playerLevel++; genTask(); } }
+                    sounds.coin.currentTime = 0; sounds.coin.play();
+                    if(selected.name === "Bella The Pig" && Math.random() > 0.9) sounds.oink.play();
+                    entities.splice(i, 1);
+                } else if(!isSlide && pY === 0) { 
+                    gameState = 'dead'; document.getElementById('reviveMenu').style.display='flex'; sounds.bg.pause();
+                }
+            }
+            if(e.y > canvas.height) entities.splice(i, 1);
+        });
+
+        // Draw Player
+        const pImg = new Image(); pImg.src = `images/casta${selected.id}.png`;
+        ctx.drawImage(pImg, visualX, canvas.height - 180 + pY, 60, isSlide ? 40 : 100);
+
+        score++; document.getElementById('coinCount').innerText = coins;
+        document.getElementById('scoreDisplay').innerText = score;
+        document.getElementById('taskText').innerText = `${currentTask.type.toUpperCase()} ${currentTask.count}/${currentTask.goal}`;
+        requestAnimationFrame(loop);
+    }
+
+    function revivePlayer() { if(totalCoins >= reviveCost) { totalCoins -= reviveCost; reviveCost *= 2; gameState = 'playing'; document.getElementById('reviveMenu').style.display='none'; sounds.bg.play(); loop(); } }
+    
+    // Daily Reward
+    if(localStorage.getItem('lastC') !== new Date().toDateString()) document.getElementById('dailyPop').style.display='flex';
+    function claimDaily() { totalCoins += 500; localStorage.setItem('lastC', new Date().toDateString()); document.getElementById('dailyPop').style.display='none'; initMenu(); }
+
+    // Controls
+    let sX, sY;
+    window.addEventListener('touchstart', e => { sX = e.touches[0].clientX; sY = e.touches[0].clientY; });
+    window.addEventListener('touchend', e => {
+        let dX = e.changedTouches[0].clientX - sX, dY = e.changedTouches[0].clientY - sY;
+        if(Math.abs(dX) > Math.abs(dY)) { if(dX > 30 && lane < 2) lane++; if(dX < -30 && lane > 0) lane--; }
+        else { 
+            if(dY < -30 && pY === 0) { jumpV = 25; if(currentTask.type === 'jump') { currentTask.count++; if(currentTask.count >= currentTask.goal) { playerLevel++; genTask(); } } }
+            if(dY > 30) { isSlide = true; slideT = 30; if(currentTask.type === 'slide') { currentTask.count++; if(currentTask.count >= currentTask.goal) { playerLevel++; genTask(); } } }
+        }
+    });
+
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    initMenu();
+</script>
+</body>
+</html>
