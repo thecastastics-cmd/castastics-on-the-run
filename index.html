@@ -3,64 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Castastics Master Runner</title>
+    <title>Castastics Master</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; }
-        #gameUI { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; text-shadow: 2px 2px #000; width: 90%; }
-        #menu, #reviveMenu, #previewer, #dailyPop { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; text-align: center; }
-        #reviveMenu, #previewer, #dailyPop { display: none; z-index: 100; }
-        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; max-height: 45vh; overflow-y: scroll; padding: 15px; border: 2px solid #444; background: #111; width: 85%; border-radius: 15px; pointer-events: auto; }
-        .char-card { border: 2px solid #444; padding: 10px; text-align: center; border-radius: 10px; background: #222; }
-        .char-card.selected { border-color: #00ff00; background: #004400; box-shadow: 0 0 10px #00ff00; }
+        body { margin: 0; background: #000; color: #fff; font-family: 'Arial Black', sans-serif; overflow: hidden; touch-action: none; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 15px; z-index: 10; pointer-events: none; width: 100%; text-shadow: 2px 2px #000; }
+        .screen { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; padding: 20px; }
+        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 40vh; overflow-y: auto; width: 90%; background: #111; padding: 15px; border: 2px solid #444; pointer-events: auto; border-radius: 15px; margin: 10px 0; }
+        .char-card { background: #222; border: 2px solid #444; padding: 5px; border-radius: 10px; }
+        .char-card.selected { border-color: #0f0; background: #003300; box-shadow: 0 0 10px #0f0; }
         .char-card img { width: 100%; height: 50px; object-fit: contain; }
-        #largeImgBox { width: 180px; height: 180px; margin: 15px 0; border: 4px solid #00ff00; border-radius: 20px; background: #111; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        #largeImgBox img { width: 90%; height: 90%; object-fit: contain; }
-        button { padding: 15px 30px; font-size: 18px; background: #00ff00; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; color: #000; margin: 5px; pointer-events: auto; }
-        .secondary-btn { background: #555; color: white; font-size: 14px; padding: 10px 20px; }
-        #muteBtn { position: absolute; bottom: 20px; right: 20px; background: #333; color: white; border-radius: 50%; width: 45px; height: 45px; border: none; z-index: 150; pointer-events: auto; }
-        #pauseBtn { position: absolute; top: 15px; right: 15px; z-index: 150; background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 15px; border-radius: 5px; pointer-events: auto; }
-        #missionBox { color: #00ffff; font-size: 14px; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px; border: 1px solid #00ffff; pointer-events: none; }
+        button { padding: 15px 30px; background: #0f0; border: none; border-radius: 50px; font-weight: bold; font-size: 18px; margin: 5px; pointer-events: auto; color: #000; }
+        #previewer { display: none; z-index: 110; }
+        #pImgBox { width: 180px; height: 180px; border: 4px solid #0f0; border-radius: 20px; background: #111; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #pImgBox img { width: 90%; height: 90%; object-fit: contain; }
+        .btn-row { position: absolute; top: 10px; right: 10px; z-index: 120; display: flex; gap: 5px; pointer-events: auto; }
+        .ctrl-btn { background: #333; color: #fff; padding: 10px; border-radius: 10px; font-size: 12px; border: 1px solid #555; }
     </style>
 </head>
 <body>
 
-<div id="gameUI">
-    <div id="missionBox">LVL <span id="curLvl">1</span>: <span id="taskText">Loading...</span></div>
-    <div style="color: #ffd700; font-size: 28px;">🪙 <span id="coinCount">0</span></div>
-    <div style="font-size: 18px;">SCORE: <span id="scoreDisplay">0</span></div>
-    <div id="powerLabel" style="color:#f0f; font-weight:bold;"></div>
+<div id="ui">
+    <div id="missionBox" style="color:#0ff; font-size:12px;" onclick="checkCheat()">LVL <span id="curLvl">1</span>: Loading Mission...</div>
+    <div style="font-size: 28px; color: gold;">🪙 <span id="coinDisplay">0</span></div>
+    <div style="font-size: 14px;">BEST: <span id="bestDisplay">0</span></div>
+    <div id="powerNotify" style="color: #f0f; font-weight: bold; font-size: 18px;"></div>
 </div>
 
-<div id="dailyPop">
-    <h1 style="color:#ffd700;">DAILY REWARD</h1>
-    <h2 style="font-size:40px;">+🪙500</h2>
+<div class="btn-row">
+    <button class="ctrl-btn" onclick="toggleMute()" id="muteBtn">🔊 MUTE</button>
+    <button class="ctrl-btn" onclick="togglePause()" id="pauseBtn">PAUSE</button>
+    <button class="ctrl-btn" onclick="location.reload()">EXIT</button>
+</div>
+
+<div id="menu" class="screen">
+    <h1 style="color:#0f0; font-style: italic; margin: 0;">CASTASTICS</h1>
+    <div style="color: gold;">BANK: 🪙 <span id="bankDisplay">0</span></div>
+    <div class="char-grid" id="charGrid"></div>
+    <button onclick="startGame()">START RUN</button>
+</div>
+
+<div id="previewer" class="screen">
+    <h2 id="pName">Name</h2>
+    <div id="pAbility" style="color:#0ff; font-size: 12px; margin-bottom: 5px;"></div>
+    <div id="pImgBox"></div>
+    <div id="pCost" style="font-size: 20px; color: gold; margin: 10px;"></div>
+    <button id="pAction">SELECT</button>
+    <button style="background:#555; color:#fff;" onclick="closePreview()">BACK</button>
+</div>
+
+<div id="reviveScreen" class="screen" style="display:none;">
+    <h1 style="color:red;">CRASHED!</h1>
+    <button onclick="revive()">REVIVE (🪙<span id="revCost">5</span>)</button>
+    <button style="background:#444; color:#fff;" onclick="location.reload()">GIVE UP</button>
+</div>
+
+<div id="dailyPop" class="screen" style="display:none;">
+    <h1 style="color: gold;">DAILY REWARD</h1>
+    <h2 style="font-size: 40px;">+🪙500</h2>
     <button onclick="claimDaily()">CLAIM</button>
 </div>
-
-<div id="menu">
-    <h1 onclick="checkCheat()" style="color:#00ff00; font-style: italic; cursor:pointer;">CASTASTICS</h1>
-    <div style="color:#ffd700; margin-bottom: 10px;">BANK: 🪙 <span id="totalCoinsDisplay">0</span></div>
-    <div class="char-grid" id="charGrid"></div>
-    <button onclick="startGame()">START RUN!</button>
-</div>
-
-<div id="previewer">
-    <h2 id="pName">NAME</h2>
-    <div id="pAbility" style="color:#00ffff; font-size:14px; min-height: 20px;"></div>
-    <div id="largeImgBox"></div>
-    <div id="pStatus" style="margin-bottom: 15px; font-weight: bold; font-size: 20px;"></div>
-    <button id="pActionBtn">SELECT</button>
-    <button class="secondary-btn" onclick="closePreview()">BACK</button>
-</div>
-
-<div id="reviveMenu">
-    <h2 style="color:#ffd700;">CRASHED!</h2>
-    <button onclick="revive()">REVIVE (🪙<span id="revCost">5</span>)</button>
-    <button class="secondary-btn" onclick="endGame()">EXIT</button>
-</div>
-
-<button id="muteBtn" onclick="toggleMute()">🔊</button>
-<button id="pauseBtn" onclick="togglePause()">PAUSE</button>
 
 <canvas id="gameCanvas"></canvas>
 
@@ -69,174 +71,170 @@
     const ctx = canvas.getContext('2d');
     const names = ["David Artsy", "Smacken", "Smacky", "A-Bomb", "Dennis The Menace", "Greg Heffley", "Nate Wright", "Kool Kid", "Girl Stick", "Hulk Ninja", "Master Stick", "Bee", "Inky", "Lego Spy Girl", "Circle", "Square", "Triangle", "Rectangle", "Lego Jet-Man", "Lego Bubble Boy", "Mrs. Fruitó", "Wheezy", "Whizzy", "Noobie", "Boxlunch Killer/Paul", "Joel", "Jet-Man", "Spy Girl", "The Artist", "Art Girl", "Bubble Boy", "Stronge", "James The Watch", "Gold Chain/Chinea", "Queen Bee/Sabrina", "Key/Jordan", "Lock/Harry", "Danny/Klipper Knight", "Dart", "Screw", "Speedy", "Zipper", "Radio", "Silver Chain", "Steele", "Scissors/Silvia", "Silver Watch", "Jesus", "Santa", "Max", "Sam", "White", "Black", "Rex", "Trixie", "Jace", "Rowan", "Lily", "Mia", "Petria", "Stampy", "Blitz Bot", "Velo", "DenisDaily", "Snake", "Walrus", "Fishy", "Dr. Evil Baby Head", "Blue", "Joel/Box Boy", "Mr. Fruitó", "Mud Man", "Yellow", "Catty", "Exterminator", "Kevin Duplop/Bug Man", "Carla and Boyo", "Green", "BOX-Man", "Jenna the Haxter", "Pollo", "Memo", "Dustin", "Terryann", "Balloon Man", "Toy Maker", "Lola", "Oscar", "Mia", "Lego Stronge", "Cheese Man", "Chase", "Squishy", "Star", "Rock Man", "Lego The Artist", "Crab", "Pedro", "Chranos", "Grymph", "The Admin", "Unstoppable Metal Beast", "Vanny/Swords Girl", "Super Spy Nick", "Bacon Hair Ryan", "Ian Alleyne", "1999 Jet-Man", "1999 Spy Girl", "1999 The Artist", "1999 Stronge", "1999 Bubble Man", "Jaquan/Spider Glue", "Nate Skywalker", "Brian/The Guitarist", "Spider Guy", "Shiann Padme", "Glue", "Talking Angela", "Alex/Big Foot", "Harry/Covered", "Lion Man", "Ishmell/Oh Mikkey Giggey Goo", "Roger/Car Man/Tank", "Jeremy/Stretcho", "Ian/Spider Glue", "Jade/Moon Witch", "Dark Shadow", "Sanjay/Slug Man", "Zach/SwordsMan", "Darker", "Black Beard", "Angela", "Ginger", "Tom", "Jerry", "Tom", "Spongebob RectanglePants", "Jake", "Annie", "David", "Chicken", "Jake (Subway Surfers)", "Venom", "Spider-Man", "Pac-Man", "Whom Whom Head/Whomie", "Bat Thumb", "Thumby", "BlackBeard", "Donnie", "Husky", "Ella", "Carmen (Lizard)", "Sabrina", "Adrien", "Toodos", "Pinching Girl", "Gothic Shadow", "Super Noob", "Kelian/Arrow Boy", "Flame", "Light", "Ice Jake", "The Artist (Jeremy)", "Spy Girl (Whitney)", "Inferno", "SwordsMan (Eren)", "Mega Boy (Adam)", "Johnny Jerickson/Fire Pen", "Ezekiel Johnson/Space Pen", "Ronal King/Unbreakable Pen", "Ivan Dél Rio/Ice Pen", "Jenny Herickson/Space Princess", "Gabby Charles/Pendi Queen", "Buzz Lightyear", "Sheriff Woody", "Bella The Pig", "Goofy", "Marty/Speed Demon", "Joey Bear", "Carmen", "Super Magnet", "Three", "Hannah", "Kenny", "Little X Jr.", "Roger/Richard", "Ice", "Stephen", "Globe", "Frank The Pencil", "Ruler", "Eddie", "Blue", "Sabrina", "Big Greene", "Ice", "Sammy", "Alocate Blacky", "Pinky Nokia", "Shred", "Hand", "Pillow", "Maxwell", "Coffee", "Tom the TV", "Ella the Lamp", "Sam the Fan", "Pebbles", "Spots", "Wrench", "Lego Bubble Man", "General Ian", "A-Boy", "Adesh", "Candy Girl", "Butthurst", "Clocky", "Leafy", "Father Shell", "Flowery", "Bushy", "Mother Shell", "Girl Shell", "Boy Shell", "Black Rubberband", "Blue Rubberband", "Pink Rubberband", "Soap", "Sponge", "Boxy the Meep", "Randy the Cardboard", "Slippers #1", "Slippers #2", "Black Perfume", "Klipper", "Klipper's Wife", "Evil Klipper", "Clothy", "Randy", "Darkness", "Mr. Money Mouse", "Black Marker", "Cover", "Black Cover", "Grandpa Mud-Man", "Ray", "Billy", "Lizzy", "Butterclay", "Messi", "Renii", "Black", "Blue", "Energy Pen Ninja", "Air Pen Ninja", "Earth Pen Ninja", "Lightning Pen Ninja", "Ice Pen Ninja", "Fire Pen Ninja", "Master Ian", "Dark Vogue", "Rocket Launcher", "Bounce", "Toothbrush", "Toothpaste", "Thirsty", "Brian The Fool", "Stephen Jeffers", "Mcseen Jeffers", "Doctor Deadpool", "Godzilla", "Point", "Oddsketeer Cat", "Gamer"];
 
-    let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
-    let missionLevel = parseInt(localStorage.getItem('casta_lvl')) || 1;
-    let gameState = 'menu', score = 0, coins = 0, speed = 8, roadY = 0, lane = 1, visualX = 0, pY = 0, jV = 0, slideT = 0;
-    let entities = [], activePower = null, pPowerTimer = 0, revCost = 5, isMuted = false, isPaused = false;
-    let currentTask = { type: 'coin', goal: 10, count: 0 };
+    let bank = parseInt(localStorage.getItem('casta_bank')) || 0;
+    let high = parseInt(localStorage.getItem('casta_best')) || 0;
+    let lvl = parseInt(localStorage.getItem('casta_lvl')) || 1;
+    let selectedId = 1, run = false, isPaused = false, isMuted = false;
+    let lane = 1, vX = 0, pY = 0, jump = 0, slide = 0, score = 0, coins = 0, speed = 10, roadIdx = 1, roadY = 0;
+    let entities = [], power = null, pT = 0, revCost = 5, task = { type: 'coin', goal: 10, count: 0 };
 
     const assets = {
-        road1: new Image(), road2: new Image(), road3: new Image(),
-        coin: new Image(), shield: new Image(), magnet: new Image(), multiplier: new Image(),
+        r1: new Image(), r2: new Image(), r3: new Image(), coin: new Image(),
+        shield: new Image(), magnet: new Image(), mult: new Image(),
         obsL: new Image(), obsH: new Image(), player: new Image()
     };
-    assets.road1.src = 'images/road.png'; assets.road2.src = 'images/road2.png'; assets.road3.src = 'images/road3.png';
+    assets.r1.src = 'images/road.png'; assets.r2.src = 'images/road2.png'; assets.r3.src = 'images/road3.png';
     assets.coin.src = 'images/coin.png'; assets.shield.src = 'images/shield.png'; 
-    assets.magnet.src = 'images/magnet.png'; assets.multiplier.src = 'images/multiplier.png';
+    assets.magnet.src = 'images/magnet.png'; assets.mult.src = 'images/multiplier.png';
     assets.obsL.src = 'images/obstacle_low.png'; assets.obsH.src = 'images/obstacle_high.png';
 
     const sfx = {
-        bg: new Audio('images/bg_music.mp3'), coin: new Audio('images/coin_ping.mp3'), oink: new Audio('images/oink.mp3'),
-        pShield: new Audio('images/powerup_shield.mp3'), pMag: new Audio('images/powerup_magnet.mp3'), pMult: new Audio('images/powerup_multiplier.mp3')
+        bg: new Audio('images/bg_music.mp3'), coin: new Audio('images/coin_ping.mp3'),
+        oink: new Audio('images/oink.mp3'), shield: new Audio('images/powerup_shield.mp3'),
+        mag: new Audio('images/powerup_magnet.mp3'), multi: new Audio('images/powerup_multiplier.mp3')
     };
     sfx.bg.loop = true;
 
-    let characters = names.map((n, i) => ({ id: i+1, name: n, cost: i===0?0:(i+1)*100, unlocked: i===0||localStorage.getItem('unl_'+(i+1)) }));
-    let selected = characters[0];
-
-    function checkCheat() {
-        let code = prompt("Enter Cheat Code:");
-        if(code === "CAU75") {
-            characters.forEach(c => { c.unlocked = true; localStorage.setItem('unl_'+c.id, 'true'); });
-            totalCoins += 10000; localStorage.setItem('casta_bank', totalCoins);
-            initMenu(); alert("All Unlocked + 10,000 Coins!");
-        }
-    }
-
-    function initMenu() {
-        document.getElementById('totalCoinsDisplay').innerText = totalCoins;
+    function init() {
+        document.getElementById('bankDisplay').innerText = bank;
+        document.getElementById('bestDisplay').innerText = high;
         const grid = document.getElementById('charGrid'); grid.innerHTML = '';
-        characters.forEach(c => {
+        names.forEach((n, i) => {
+            const id = i + 1;
             const card = document.createElement('div');
-            card.className = `char-card ${selected.id===c.id?'selected':''}`;
-            card.innerHTML = `<img src="images/casta${c.id}.png" onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='"><div style="font-size:8px;">${c.name}</div>`;
-            card.onclick = () => openPreview(c);
+            card.className = `char-card ${selectedId === id ? 'selected' : ''}`;
+            card.innerHTML = `<img src="images/casta${id}.png" onerror="this.style.background='#333'">`;
+            card.onclick = () => openPreview(n, id);
             grid.appendChild(card);
         });
+        if(localStorage.getItem('lastDaily') !== new Date().toDateString()) document.getElementById('dailyPop').style.display='flex';
+        genMission();
     }
 
-    function openPreview(char) {
-        document.getElementById('pName').innerText = char.name;
-        document.getElementById('largeImgBox').innerHTML = `<img src="images/casta${char.id}.png">`;
-        document.getElementById('pAbility').innerText = char.name==="Super Magnet"?"⭐ PERMANENT MAGNET": (char.name==="Bella The Pig"?"⭐ 2X COINS & OINK!":"");
-        const btn = document.getElementById('pActionBtn');
-        const status = document.getElementById('pStatus');
-        if(char.unlocked) { status.innerText = "OWNED"; btn.innerText = "SELECT"; btn.onclick = () => { selected = char; closePreview(); initMenu(); }; }
-        else { status.innerText = `COST: 🪙${char.cost}`; btn.innerText = "BUY"; btn.onclick = () => buyChar(char); }
+    function openPreview(name, id) {
+        document.getElementById('pName').innerText = name;
+        document.getElementById('pImgBox').innerHTML = `<img src="images/casta${id}.png">`;
+        const cost = id === 1 ? 0 : id * 100;
+        const unl = id === 1 || localStorage.getItem('unl_' + id);
+        document.getElementById('pAbility').innerText = name === "Bella The Pig" ? "⭐ 4X COINS & OINK!" : (name === "Super Magnet" ? "⭐ PERMANENT MAGNET" : "");
+        document.getElementById('pCost').innerText = unl ? "OWNED" : `COST: 🪙${cost}`;
+        const btn = document.getElementById('pAction');
+        btn.innerText = unl ? "SELECT" : "BUY";
+        btn.onclick = () => {
+            if (unl) { selectedId = id; closePreview(); init(); }
+            else if (bank >= cost) { bank -= cost; localStorage.setItem('casta_bank', bank); localStorage.setItem('unl_' + id, 'true'); openPreview(name, id); init(); }
+        };
         document.getElementById('previewer').style.display = 'flex';
-    }
-
-    function buyChar(c) {
-        if(totalCoins >= c.cost) { totalCoins -= c.cost; c.unlocked = true; localStorage.setItem('unl_'+c.id, 'true'); localStorage.setItem('casta_bank', totalCoins); openPreview(c); initMenu(); }
-        else alert("Not enough coins!");
     }
     function closePreview() { document.getElementById('previewer').style.display = 'none'; }
 
-    function genTask() {
-        const types = ['coin', 'jump', 'slide', 'powerup'];
-        let t = types[Math.floor(Math.random()*4)];
-        currentTask = { type: t, goal: 5 + (missionLevel * 2), count: 0 };
+    function genMission() {
+        const t = ['coin', 'jump', 'slide', 'power'];
+        task = { type: t[Math.floor(Math.random()*4)], goal: 10 + (lvl*2), count: 0 };
         updateTaskUI();
     }
-    function updateTaskUI() {
-        document.getElementById('curLvl').innerText = missionLevel;
-        document.getElementById('taskText').innerText = `${currentTask.type.toUpperCase()}: ${currentTask.count}/${currentTask.goal}`;
+    function updateTaskUI() { 
+        document.getElementById('curLvl').innerText = lvl; 
+        document.getElementById('missionBox').innerText = `LVL ${lvl}: ${task.type.toUpperCase()} ${task.count}/${task.goal}`; 
     }
-    function checkProgress(type) {
-        if(currentTask.type === type && missionLevel <= 75) {
-            currentTask.count++;
-            if(currentTask.count >= currentTask.goal) { missionLevel++; totalCoins += (missionLevel * 100); localStorage.setItem('casta_lvl', missionLevel); genTask(); }
+    function checkTask(type) {
+        if(task.type === type && lvl <= 75) {
+            task.count++;
+            if(task.count >= task.goal) { lvl++; bank += (lvl*100); localStorage.setItem('casta_lvl', lvl); genMission(); }
             updateTaskUI();
         }
     }
 
+    function toggleMute() { isMuted = !isMuted; Object.values(sfx).forEach(s => s.muted = isMuted); document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊 MUTE'; }
+    function togglePause() { isPaused = !isPaused; document.getElementById('pauseBtn').innerText = isPaused ? 'RESUME' : 'PAUSE'; }
+    function checkCheat() { if(prompt("CODE:") === "CAU75") { bank += 10000; names.forEach((_,i)=>localStorage.setItem('unl_'+(i+1), 'true')); init(); } }
+    function claimDaily() { bank += 500; localStorage.setItem('lastDaily', new Date().toDateString()); document.getElementById('dailyPop').style.display='none'; init(); }
+
     function startGame() {
         document.getElementById('menu').style.display = 'none';
-        gameState = 'playing'; score = 0; coins = 0; entities = []; lane = 1; speed = 8;
-        assets.player.src = `images/casta${selected.id}.png`;
-        if(!isMuted) sfx.bg.play().catch(()=>{});
-        if(selected.name === "Bella The Pig") sfx.oink.play();
-        genTask(); loop();
+        assets.player.src = `images/casta${selectedId}.png`;
+        assets.player.onload = () => { 
+            run = true; score = 0; coins = 0; lane = 1; vX = (canvas.width/2)-30; entities = []; roadIdx = 1; speed = 10;
+            sfx.bg.currentTime = 0; sfx.bg.play().catch(()=>{});
+            loop();
+        };
     }
 
     function loop() {
-        if(gameState !== 'playing' || isPaused) return;
+        if (!run || isPaused) { if(isPaused) requestAnimationFrame(loop); return; }
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
-        // Road Switching Logic
-        let roadImg = assets.road1;
-        if(score > 20000) roadImg = assets.road3;
-        else if(score > 10000) roadImg = assets.road2;
-        
+        // Road Loop
+        if(score > roadIdx * 10000) { roadIdx++; if(roadIdx > 3) roadIdx = 1; }
         roadY += speed; if(roadY > canvas.height) roadY = 0;
-        ctx.drawImage(roadImg, 0, roadY, canvas.width, canvas.height);
-        ctx.drawImage(roadImg, 0, roadY - canvas.height, canvas.width, canvas.height);
+        ctx.drawImage(assets['r'+roadIdx], 0, roadY, canvas.width, canvas.height);
+        ctx.drawImage(assets['r'+roadIdx], 0, roadY - canvas.height, canvas.width, canvas.height);
 
+        // Character Movement
         let targetX = lane * (canvas.width/3) + (canvas.width/6) - 30;
-        visualX += (targetX - visualX) * 0.2;
-        if(jV !== 0 || pY < 0) { pY -= jV; jV -= 1.2; if(pY > 0) { pY = 0; jV = 0; } }
-        if(slideT > 0) slideT--;
-        if(pPowerTimer > 0) { pPowerTimer--; if(pPowerTimer <= 0) { activePower = null; document.getElementById('powerLabel').innerText = ""; } }
+        vX += (targetX - vX) * 0.15;
+        if(jump !== 0 || pY < 0) { pY -= jump; jump -= 1.5; if(pY > 0) { pY = 0; jump = 0; } }
+        if(slide > 0) slide--;
 
-        if(Math.random() < 0.04) {
+        // Spawn logic
+        if(Math.random() < 0.05) {
             let l = Math.floor(Math.random()*3);
             let r = Math.random();
-            let type = r > 0.96 ? 'shield' : (r > 0.92 ? 'magnet' : (r > 0.88 ? 'multiplier' : (r > 0.4 ? 'coin' : (Math.random()>0.5?'obsL':'obsH'))));
-            entities.push({ x: l*(canvas.width/3)+(canvas.width/6)-20, y: -50, t: type });
+            let type = r > 0.97 ? 'shield' : (r > 0.94 ? 'magnet' : (r > 0.91 ? 'mult' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsL' : 'obsH'))));
+            entities.push({ x: l*(canvas.width/3)+(canvas.width/6)-20, y: -100, t: type });
         }
 
         entities.forEach((e, i) => {
             e.y += speed;
-            if((selected.name === "Super Magnet" || activePower === 'magnet') && e.t === 'coin') e.x += (visualX - e.x) * 0.15;
-            
-            let img = assets[e.t] || assets.coin;
-            ctx.drawImage(img, e.x, e.y, 40, 40);
+            if((power === 'magnet' || names[selectedId-1] === "Super Magnet") && e.t === 'coin') e.x += (vX - e.x) * 0.18;
+            ctx.drawImage(assets[e.t] || assets.coin, e.x, e.y, 45, 45);
 
-            if(Math.abs(e.x - visualX) < 40 && e.y > canvas.height-180+pY && e.y < canvas.height-80) {
+            if(Math.abs(e.x - vX) < 35 && e.y > canvas.height - 180 + pY && e.y < canvas.height - 60) {
                 if(e.t === 'coin') {
-                    let m = (selected.name === "Bella The Pig") ? 2 : (activePower === 'multiplier' ? 4 : 1);
-                    coins += m; sfx.coin.currentTime = 0; sfx.coin.play();
-                    checkProgress('coin'); entities.splice(i,1);
-                } else if(['shield','magnet','multiplier'].includes(e.t)) {
-                    activePower = e.t; pPowerTimer = 400; checkProgress('powerup');
-                    document.getElementById('powerLabel').innerText = e.t.toUpperCase();
-                    if(e.t==='shield') sfx.pShield.play(); if(e.t==='magnet') sfx.pMag.play(); if(e.t==='multiplier') sfx.pMult.play();
-                    entities.splice(i,1);
+                    let m = (names[selectedId-1] === "Bella The Pig" || power === 'mult') ? 4 : 1;
+                    coins += m; bank += m; sfx.coin.currentTime = 0; sfx.coin.play();
+                    if(names[selectedId-1] === "Bella The Pig" && Math.random() > 0.8) sfx.oink.play();
+                    checkTask('coin'); entities.splice(i, 1);
+                } else if(['shield','magnet','mult'].includes(e.t)) {
+                    power = e.t; pT = 600; checkTask('power');
+                    document.getElementById('powerNotify').innerText = e.t.toUpperCase() + "!";
+                    if(e.t==='shield') sfx.shield.play(); if(e.t==='magnet') sfx.mag.play(); if(e.t==='mult') sfx.multi.play();
+                    entities.splice(i, 1);
                 } else {
-                    if(activePower === 'shield') { activePower = null; entities.splice(i,1); }
-                    else if(!((e.t==='obsL' && pY < -30) || (e.t==='obsH' && slideT > 0))) { gameState = 'dead'; document.getElementById('reviveMenu').style.display='flex'; }
+                    if(power === 'shield') { power = null; pT = 0; entities.splice(i,1); document.getElementById('powerNotify').innerText=""; }
+                    else if(!((e.t==='obsL' && pY < -30) || (e.t==='obsH' && slide > 0))) { 
+                        run = false; sfx.bg.pause();
+                        if(score > high) { high = score; localStorage.setItem('casta_best', high); }
+                        document.getElementById('reviveScreen').style.display='flex';
+                    }
                 }
             }
-            if(e.y > canvas.height) entities.splice(i,1);
+            if(e.y > canvas.height) entities.splice(i, 1);
         });
 
-        // Player Animation
-        ctx.drawImage(assets.player, visualX, canvas.height-180+pY, 60, slideT > 0 ? 40 : 100);
+        if(pT > 0) { pT--; if(pT <= 0) { power = null; document.getElementById('powerNotify').innerText = ""; } }
+        ctx.drawImage(assets.player, vX, canvas.height - 180 + pY, 60, slide > 0 ? 40 : 100);
         
-        score += 5; speed = 8 + (score/5000);
-        document.getElementById('coinCount').innerText = coins;
-        document.getElementById('scoreDisplay').innerText = score;
+        score++; speed += 0.001;
+        document.getElementById('coinDisplay').innerText = coins;
         requestAnimationFrame(loop);
     }
 
-    function togglePause() { isPaused = !isPaused; document.getElementById('pauseBtn').innerText = isPaused ? "RESUME" : "PAUSE"; if(!isPaused) loop(); }
-    function toggleMute() { isMuted = !isMuted; Object.values(sfx).forEach(s => s.muted = isMuted); document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊"; }
-    function revive() { if(totalCoins >= revCost) { totalCoins -= revCost; revCost *= 2; gameState = 'playing'; document.getElementById('reviveMenu').style.display='none'; loop(); } }
-    function endGame() { totalCoins += coins; localStorage.setItem('casta_bank', totalCoins); location.reload(); }
-    function claimDaily() { totalCoins += 500; localStorage.setItem('casta_lastC', new Date().toDateString()); document.getElementById('dailyPop').style.display='none'; initMenu(); }
-
-    if(localStorage.getItem('casta_lastC') !== new Date().toDateString()) document.getElementById('dailyPop').style.display='flex';
+    function revive() { if(bank >= revCost) { bank -= revCost; revCost *= 2; run = true; document.getElementById('reviveScreen').style.display='none'; sfx.bg.play(); loop(); } }
 
     let sX, sY;
     window.addEventListener('touchstart', e => { sX = e.touches[0].clientX; sY = e.touches[0].clientY; });
     window.addEventListener('touchend', e => {
         let dX = e.changedTouches[0].clientX - sX, dY = e.changedTouches[0].clientY - sY;
-        if(Math.abs(dX) > Math.abs(dY)) { if(dX > 30 && lane < 2) lane++; if(dX < -30 && lane > 0) lane--; }
-        else { if(dY < -30 && pY === 0) { jV = 22; checkProgress('jump'); } if(dY > 30) { slideT = 35; checkProgress('slide'); } }
+        if(Math.abs(dX) > Math.abs(dY)) { if(dX > 40 && lane < 2) lane++; if(dX < -40 && lane > 0) lane--; }
+        else { 
+            if(dY < -40 && pY === 0) { jump = 24; checkTask('jump'); }
+            if(dY > 40) { slide = 40; checkTask('slide'); }
+        }
     });
 
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    initMenu();
+    init();
 </script>
 </body>
 </html>
