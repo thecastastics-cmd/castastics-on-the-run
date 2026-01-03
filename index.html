@@ -24,7 +24,7 @@
 <body>
 
 <div id="ui">
-    <div id="missionBox" style="color:#0ff; font-size:12px;" onclick="checkCheat()">LVL <span id="curLvl">1</span>: Loading Mission...</div>
+    <div id="missionBox" style="color:#0ff; font-size:12px;" onclick="checkCheat()">LVL <span id="curLvl">1</span>: Loading...</div>
     <div style="font-size: 28px; color: gold;">🪙 <span id="coinDisplay">0</span></div>
     <div style="font-size: 14px;">BEST: <span id="bestDisplay">0</span></div>
     <div id="powerNotify" style="color: #f0f; font-weight: bold; font-size: 18px;"></div>
@@ -60,8 +60,7 @@
 
 <div id="dailyPop" class="screen" style="display:none;">
     <h1 style="color: gold;">DAILY REWARD</h1>
-    <h2 style="font-size: 40px;">+🪙500</h2>
-    <button onclick="claimDaily()">CLAIM</button>
+    <button onclick="claimDaily()">CLAIM +🪙500</button>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -75,7 +74,7 @@
     let high = parseInt(localStorage.getItem('casta_best')) || 0;
     let lvl = parseInt(localStorage.getItem('casta_lvl')) || 1;
     let selectedId = 1, run = false, isPaused = false, isMuted = false;
-    let lane = 1, vX = 0, pY = 0, jump = 0, slide = 0, score = 0, coins = 0, speed = 10, roadIdx = 1, roadY = 0;
+    let lane = 1, vX = 0, pY = 0, jump = 0, slide = 0, score = 0, coins = 0, speed = 8, roadIdx = 1, roadY = 0;
     let entities = [], power = null, pT = 0, revCost = 5, task = { type: 'coin', goal: 10, count: 0 };
 
     const assets = {
@@ -103,7 +102,7 @@
             const id = i + 1;
             const card = document.createElement('div');
             card.className = `char-card ${selectedId === id ? 'selected' : ''}`;
-            card.innerHTML = `<img src="images/casta${id}.png" onerror="this.style.background='#333'">`;
+            card.innerHTML = `<img src="images/casta${id}.png">`;
             card.onclick = () => openPreview(n, id);
             grid.appendChild(card);
         });
@@ -127,7 +126,6 @@
         document.getElementById('previewer').style.display = 'flex';
     }
     function closePreview() { document.getElementById('previewer').style.display = 'none'; }
-
     function genMission() {
         const t = ['coin', 'jump', 'slide', 'power'];
         task = { type: t[Math.floor(Math.random()*4)], goal: 10 + (lvl*2), count: 0 };
@@ -144,7 +142,6 @@
             updateTaskUI();
         }
     }
-
     function toggleMute() { isMuted = !isMuted; Object.values(sfx).forEach(s => s.muted = isMuted); document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊 MUTE'; }
     function togglePause() { isPaused = !isPaused; document.getElementById('pauseBtn').innerText = isPaused ? 'RESUME' : 'PAUSE'; }
     function checkCheat() { if(prompt("CODE:") === "CAU75") { bank += 10000; names.forEach((_,i)=>localStorage.setItem('unl_'+(i+1), 'true')); init(); } }
@@ -154,7 +151,7 @@
         document.getElementById('menu').style.display = 'none';
         assets.player.src = `images/casta${selectedId}.png`;
         assets.player.onload = () => { 
-            run = true; score = 0; coins = 0; lane = 1; vX = (canvas.width/2)-30; entities = []; roadIdx = 1; speed = 10;
+            run = true; score = 0; coins = 0; lane = 1; vX = (canvas.width/3) + (canvas.width/6) - 30; entities = []; roadIdx = 1; speed = 8;
             sfx.bg.currentTime = 0; sfx.bg.play().catch(()=>{});
             loop();
         };
@@ -164,20 +161,20 @@
         if (!run || isPaused) { if(isPaused) requestAnimationFrame(loop); return; }
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
-        // Road Loop
+        // Road logic (10k switch)
         if(score > roadIdx * 10000) { roadIdx++; if(roadIdx > 3) roadIdx = 1; }
         roadY += speed; if(roadY > canvas.height) roadY = 0;
         ctx.drawImage(assets['r'+roadIdx], 0, roadY, canvas.width, canvas.height);
         ctx.drawImage(assets['r'+roadIdx], 0, roadY - canvas.height, canvas.width, canvas.height);
 
-        // Character Movement
+        // Side-to-side Animation
         let targetX = lane * (canvas.width/3) + (canvas.width/6) - 30;
         vX += (targetX - vX) * 0.15;
         if(jump !== 0 || pY < 0) { pY -= jump; jump -= 1.5; if(pY > 0) { pY = 0; jump = 0; } }
         if(slide > 0) slide--;
 
-        // Spawn logic
-        if(Math.random() < 0.05) {
+        // Entity Spawning (Balanced)
+        if(Math.random() < 0.04 && score > 50) {
             let l = Math.floor(Math.random()*3);
             let r = Math.random();
             let type = r > 0.97 ? 'shield' : (r > 0.94 ? 'magnet' : (r > 0.91 ? 'mult' : (r > 0.4 ? 'coin' : (Math.random() > 0.5 ? 'obsL' : 'obsH'))));
@@ -187,9 +184,10 @@
         entities.forEach((e, i) => {
             e.y += speed;
             if((power === 'magnet' || names[selectedId-1] === "Super Magnet") && e.t === 'coin') e.x += (vX - e.x) * 0.18;
-            ctx.drawImage(assets[e.t] || assets.coin, e.x, e.y, 45, 45);
+            ctx.drawImage(assets[e.t] || assets.coin, e.x, e.y, 40, 40);
 
-            if(Math.abs(e.x - vX) < 35 && e.y > canvas.height - 180 + pY && e.y < canvas.height - 60) {
+            // Safer Collision Hitbox
+            if(Math.abs(e.x - vX) < 30 && e.y > canvas.height - 180 + pY && e.y < canvas.height - 80) {
                 if(e.t === 'coin') {
                     let m = (names[selectedId-1] === "Bella The Pig" || power === 'mult') ? 4 : 1;
                     coins += m; bank += m; sfx.coin.currentTime = 0; sfx.coin.play();
@@ -215,7 +213,7 @@
         if(pT > 0) { pT--; if(pT <= 0) { power = null; document.getElementById('powerNotify').innerText = ""; } }
         ctx.drawImage(assets.player, vX, canvas.height - 180 + pY, 60, slide > 0 ? 40 : 100);
         
-        score++; speed += 0.001;
+        score++; speed += 0.0005;
         document.getElementById('coinDisplay').innerText = coins;
         requestAnimationFrame(loop);
     }
