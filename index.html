@@ -561,18 +561,20 @@ document.body.appendChild(rUI);
         else if (idx >= 100) { color = "#00CCFF"; rank = "RARE"; }      
 
         // 5. Update the Screen
-        rUI.style.color = color;
-        rUI.innerHTML = `<span style="font-size:10px; opacity:0.8; display:block; letter-spacing:1.5px;">${rank}</span>${name.toUpperCase()}`;
+rUI.style.color = color;
+rUI.innerHTML = `<span style="font-size:10px; opacity:0.8; display:block; letter-spacing:1.5px;">${rank}</span>${name.toUpperCase()}`;
         
-        // Hide if the previewer or menu isn't visible? (Optional, but keeps it clean)
-        let previewVisible = document.getElementById('previewer').style.display === 'flex';
-        let menuVisible = document.getElementById('menu').style.display === 'flex';
-        rUI.style.display = (previewVisible || menuVisible || gameState === 'playing') ? 'block' : 'none';
-    }
+// We only check for the menus/previewer
+let previewVisible = document.getElementById('previewer').style.display === 'flex';
+let menuVisible = document.getElementById('menu').style.display === 'flex';
 
-    setInterval(update, 200);
-})();
+// Only 'block' (show) if a menu is open. If the game starts, this becomes 'none' (hide).
+rUI.style.display = (previewVisible || menuVisible) ? 'block' : 'none';
 
+
+setInterval(update, 200);
+ })();
+        
     // === VILLAIN SIDE-QUEST SYSTEM ===
 const villain = {
     active: false,
