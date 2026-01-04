@@ -320,7 +320,7 @@ html, body {
     });
 
     function update(timestamp) {
-        if(gameState !== 'playing' || isPaused) { if(isPaused) requestAnimationFrame(update); return; }
+        if(gameState !== 'playing' || isPaused) { if(isPaused) { lastTime = timestamp; requestAnimationFrame(update); } return; }
         ctx.clearRect(0,0,canvas.width, canvas.height);
         let delta = (timestamp - lastTime) / 1000;
         if(!isNaN(delta)) {
