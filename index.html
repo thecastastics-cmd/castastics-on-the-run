@@ -462,32 +462,45 @@
     // Run the check when the script loads
     checkDailyReward();
 
-// === CHARACTER RARITY SYSTEM ===
-const rarityUI = document.createElement('div');
-rarityUI.id = 'rarity-display';
-rarityUI.style = "position:fixed; top:20px; left:20px; font-family:Arial, sans-serif; font-weight:bold; font-size:22px; text-shadow: 2px 2px #000; z-index:9999; pointer-events:none;";
-document.body.appendChild(rarityUI);
+// === THE ULTIMATE SHOP-SYNC RARITY SYSTEM ===
+(function() {
+    const rUI = document.createElement('div');
+    rUI.id = 'rarity-display-final';
+    // Positioned top-left to match your screenshot
+    rUI.style = "position:fixed; top:20px; left:20px; font-family:sans-serif; font-weight:bold; font-size:22px; text-shadow: 2px 2px #000; z-index:99999; pointer-events:none; line-height:1.1;";
+    document.body.appendChild(rUI);
 
-function updateRarityUI() {
-    // This finds your character even if you're just looking in the shop
-    let idx = (typeof shopIndex !== 'undefined') ? shopIndex : (typeof selectedCharacterIndex !== 'undefined' ? selectedCharacterIndex : 0);
-    let charList = (typeof characters !== 'undefined') ? characters : [];
-    
-    if (charList.length === 0 || !charList[idx]) return;
+    function update() {
+        // 1. Check all possible variables for the character list
+        let list = window.characters || [];
+        
+        // 2. Priority: Show what player is tapping in the grid FIRST, then the selected player
+        let idx = 0;
+        if (typeof hoveredCharacterIndex !== 'undefined' && hoveredCharacterIndex !== null && hoveredCharacterIndex !== -1) {
+            idx = hoveredCharacterIndex; 
+        } else if (typeof selectedCharacterIndex !== 'undefined') {
+            idx = selectedCharacterIndex;
+        }
 
-    let charName = charList[idx].name || "Runner";
-    let color = "#FFFFFF"; 
-    let rank = "COMMON";
+        if (!list || !list[idx]) return;
 
-    if (idx >= 250) { color = "#FFD700"; rank = "LEGENDARY"; } 
-    else if (idx >= 200) { color = "#BF00FF"; rank = "EPIC"; }      
-    else if (idx >= 100) { color = "#00CCFF"; rank = "RARE"; }      
+        let name = list[idx].name || "Runner";
+        let color = "#FFFFFF"; 
+        let rank = "COMMON";
 
-    rarityUI.style.color = color;
-    rarityUI.innerHTML = `<span style="font-size:12px; opacity:0.8; display:block;">${rank}</span>${charName}`;
-}
+        // 3. Rarity Logic based on your 275 characters
+        if (idx >= 250) { color = "#FFD700"; rank = "LEGENDARY"; } 
+        else if (idx >= 200) { color = "#BF00FF"; rank = "EPIC"; }      
+        else if (idx >= 100) { color = "#00CCFF"; rank = "RARE"; }      
 
-setInterval(updateRarityUI, 300);
+        // 4. Update visuals
+        rUI.style.color = color;
+        rUI.innerHTML = `<span style="font-size:10px; opacity:0.8; display:block; letter-spacing:1.5px;">${rank}</span>${name.toUpperCase()}`;
+    }
+
+    // Runs fast (every 200ms) so it feels instant when you tap the grid
+    setInterval(update, 200);
+})();
     
 </script>
 </body>
