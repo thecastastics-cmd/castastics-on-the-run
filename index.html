@@ -462,43 +462,46 @@
     // Run the check when the script loads
     checkDailyReward();
 
-// === THE ULTIMATE SHOP-SYNC RARITY SYSTEM ===
+// === THE "CASTASTICS" RARITY SYNC ===
 (function() {
     const rUI = document.createElement('div');
     rUI.id = 'rarity-display-final';
-    // Positioned top-left to match your screenshot
     rUI.style = "position:fixed; top:20px; left:20px; font-family:sans-serif; font-weight:bold; font-size:22px; text-shadow: 2px 2px #000; z-index:99999; pointer-events:none; line-height:1.1;";
     document.body.appendChild(rUI);
 
     function update() {
-        // 1. Check all possible variables for the character list
+        // 1. Get the list of characters
         let list = window.characters || [];
         
-        // 2. Priority: Show what player is tapping in the grid FIRST, then the selected player
-        let idx = 0;
-        if (typeof hoveredCharacterIndex !== 'undefined' && hoveredCharacterIndex !== null && hoveredCharacterIndex !== -1) {
-            idx = hoveredCharacterIndex; 
-        } else if (typeof selectedCharacterIndex !== 'undefined') {
-            idx = selectedCharacterIndex;
-        }
+        // 2. Identify which character to show
+        // We check your 'currentPreviewingChar' first, then 'selectedChar'
+        let charObj = (typeof currentPreviewingChar !== 'undefined' && currentPreviewingChar !== null) 
+                      ? currentPreviewingChar 
+                      : (typeof selectedChar !== 'undefined' ? selectedChar : null);
 
-        if (!list || !list[idx]) return;
+        if (!charObj) return;
 
-        let name = list[idx].name || "Runner";
+        // 3. Find the ID (since your IDs start at 1, we subtract 1 for the index)
+        let idx = charObj.id - 1;
+        let name = charObj.name || "Runner";
         let color = "#FFFFFF"; 
         let rank = "COMMON";
 
-        // 3. Rarity Logic based on your 275 characters
+        // 4. Rarity Logic
         if (idx >= 250) { color = "#FFD700"; rank = "LEGENDARY"; } 
         else if (idx >= 200) { color = "#BF00FF"; rank = "EPIC"; }      
         else if (idx >= 100) { color = "#00CCFF"; rank = "RARE"; }      
 
-        // 4. Update visuals
+        // 5. Update the Screen
         rUI.style.color = color;
         rUI.innerHTML = `<span style="font-size:10px; opacity:0.8; display:block; letter-spacing:1.5px;">${rank}</span>${name.toUpperCase()}`;
+        
+        // Hide if the previewer or menu isn't visible? (Optional, but keeps it clean)
+        let previewVisible = document.getElementById('previewer').style.display === 'flex';
+        let menuVisible = document.getElementById('menu').style.display === 'flex';
+        rUI.style.display = (previewVisible || menuVisible || gameState === 'playing') ? 'block' : 'none';
     }
 
-    // Runs fast (every 200ms) so it feels instant when you tap the grid
     setInterval(update, 200);
 })();
     
