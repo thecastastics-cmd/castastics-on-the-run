@@ -21,6 +21,41 @@
 </head>
 <body>
 
+    <div id="videoIntro" style="position:fixed; inset:0; background:#000; z-index:100000; display:flex; align-items:center; justify-content:center;">
+    <video id="trailerVideo" style="width:100%; height:100%; object-fit:contain;" autoplay muted playsinline>
+        <source src="images/trailer.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <button id="skipBtn" style="position:absolute; bottom:30px; right:20px; padding:10px 20px; font-size:14px; background:rgba(255,255,255,0.3); color:white; border:1px solid white; border-radius:5px; z-index:100001;">SKIP</button>
+</div>
+
+<script>
+    const introOverlay = document.getElementById('videoIntro');
+    const video = document.getElementById('trailerVideo');
+    const skipBtn = document.getElementById('skipBtn');
+
+    // Function to close video and show game
+    function finishVideo() {
+        video.pause();
+        introOverlay.style.display = 'none';
+        // Try to unmute game music if it was blocked by the video
+        if(typeof initMenu === 'function') initMenu();
+    }
+
+    // When video ends naturally
+    video.onended = finishVideo;
+
+    // When skip is pressed
+    skipBtn.onclick = finishVideo;
+
+    // MOBILE AUTO-PLAY FIX: 
+    // Most phones block video sound until the user taps. 
+    // The video starts muted, but we can unmute it if they tap anywhere.
+    window.addEventListener('click', () => {
+        video.muted = false;
+    }, { once: true });
+</script>
+
 <div id="gameUI">
     <div style="color: #ffd700; font-size: 28px;">🪙 <span id="coinCount">0</span></div>
     <div style="font-size: 14px; opacity:0.8; color: #00ff00;">BEST: <span id="highScoreDisplay">0</span></div>
