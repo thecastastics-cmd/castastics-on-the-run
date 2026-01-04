@@ -399,6 +399,9 @@
         speed += 0.001;
         document.getElementById('coinCount').innerText = coins;
         document.getElementById('scoreDisplay').innerText = Math.floor(score);
+
+        updateVillain(ctx, canvas, visualX, delta);
+        
         requestAnimationFrame(update);
     }
 
@@ -539,6 +542,75 @@
 
     setInterval(update, 200);
 })();
+
+    // === VILLAIN SIDE-QUEST SYSTEM ===
+const villain = {
+    active: false,
+    x: 0,
+    y: -100,
+    targetX: 0,
+    timer: 0,
+    lastShot: 0,
+    hp: 1 // Just for visual tracking
+};
+
+function triggerVillainQuest() {
+    if (villain.active) return;
+    villain.active = true;
+    villain.timer = 1000; // 20 seconds roughly (at 50fps)
+    villain.y = -100;
+    document.getElementById('powerNotify').innerText = "VILLAIN ATTACK!";
+    document.getElementById('powerNotify').style.color = "red";
+}
+
+function updateVillain(ctx, canvas, visualX, delta) {
+    if (!villain.active) {
+        // Trigger every 5000 score (approx)
+        if (Math.floor(score) % 5000 === 0 && score > 100) triggerVillainQuest();
+        return;
+    }
+
+    // 1. Move Villain onto screen and follow player's X
+    villain.y = Math.min(villain.y + 2, 50); 
+    villain.targetX = visualX;
+    villain.x += (villain.targetX - villain.x) * 0.05;
+
+    // 2. Draw Villain (A red-glowing orb or triangle)
+    ctx.save();
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "red";
+    ctx.fillStyle = "#330000";
+    ctx.beginPath();
+    ctx.moveTo(villain.x + 35, villain.y);
+    ctx.lineTo(villain.x + 10, villain.y + 60);
+    ctx.lineTo(villain.x + 60, villain.y + 60);
+    ctx.fill();
+    ctx.restore();
+
+    // 3. Shooting Logic
+    villain.timer--;
+    if (Date.now() - villain.lastShot > 1200) { // Shoot every 1.2 seconds
+        entities.push({ 
+            lane: currentLane, 
+            x: villain.x + 25, 
+            y: villain.y + 60, 
+            type: 'obsHigh', // Reuse high obstacle logic
+            isLaser: true 
+        });
+        villain.lastShot = Date.now();
+    }
+
+    // 4. End Quest
+    if (villain.timer <= 0) {
+        villain.y -= 5;
+        if (villain.y < -100) {
+            villain.active = false;
+            document.getElementById('powerNotify').innerText = "QUEST COMPLETE! +500 COINS";
+            totalCoins += 500;
+            localStorage.setItem('casta_bank', totalCoins);
+        }
+    }
+}
     
 </script>
 </body>
