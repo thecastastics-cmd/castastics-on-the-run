@@ -247,7 +247,8 @@
 
     function startGame() {
         document.getElementById('menu').style.display = 'none';
-        score = 0; coins = 0; entities = []; currentLane = 1; speed = 8;
+        score = 0; coins = 0; villain.active = false;
+    villain.y = -100; entities = []; currentLane = 1; speed = 8;
         visualX = (canvas.width / 3) + (canvas.width / 6) - 35;
         powerTimer = 0; activePower = null; playerYOffset = 0; reviveCost = 5; isPaused = false;
         lastTime = performance.now();
