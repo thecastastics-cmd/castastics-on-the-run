@@ -518,9 +518,10 @@
 // === THE "CASTASTICS" RARITY SYNC ===
 (function() {
     const rUI = document.createElement('div');
-    rUI.id = 'rarity-display-final';
-    rUI.style = "position:fixed; top:20px; left:20px; font-family:sans-serif; font-weight:bold; font-size:22px; text-shadow: 2px 2px #000; z-index:99999; pointer-events:none; line-height:1.1;";
-    document.body.appendChild(rUI);
+rUI.id = 'rarity-display-final';
+// Change left:20px to the center formula:
+rUI.style = "position:fixed; top:20px; left:50%; transform:translateX(-50%); font-family:sans-serif; font-weight:bold; font-size:22px; text-shadow: 2px 2px #000; z-index:99999; pointer-events:none; line-height:1.1; white-space:nowrap; text-align:center; color:white;";
+document.body.appendChild(rUI);
 
     function update() {
         // 1. Get the list of characters
