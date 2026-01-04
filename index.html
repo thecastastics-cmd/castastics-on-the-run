@@ -556,6 +556,7 @@ const villain = {
 
 function triggerVillainQuest() {
     if (villain.active) return;
+    villain.img = null; //
     villain.active = true;
     villain.timer = 1000; // 20 seconds roughly (at 50fps)
     villain.y = -100;
@@ -575,16 +576,31 @@ function updateVillain(ctx, canvas, visualX, delta) {
     villain.targetX = visualX;
     villain.x += (villain.targetX - villain.x) * 0.05;
 
-    // 2. Draw Villain (A red-glowing orb or triangle)
+    // 2. Draw Villain (Random Image Version)
     ctx.save();
+    
+    // Create the image objects if they don't exist
+    if (!villain.img) {
+        villain.img = new Image();
+        // Picks a number between 1 and 3
+        let randomNum = Math.floor(Math.random() * 3) + 1;
+        villain.img.src = `images/villain${randomNum}.png`;
+    }
+
     ctx.shadowBlur = 20;
     ctx.shadowColor = "red";
-    ctx.fillStyle = "#330000";
-    ctx.beginPath();
-    ctx.moveTo(villain.x + 35, villain.y);
-    ctx.lineTo(villain.x + 10, villain.y + 60);
-    ctx.lineTo(villain.x + 60, villain.y + 60);
-    ctx.fill();
+    
+    if(villain.img.complete) {
+        ctx.drawImage(villain.img, villain.x, villain.y, 80, 80);
+    } else {
+        // Red triangle fallback while image loads
+        ctx.fillStyle = "red";
+        ctx.beginPath();
+        ctx.moveTo(villain.x+40, villain.y);
+        ctx.lineTo(villain.x, villain.y+70);
+        ctx.lineTo(villain.x+80, villain.y+70);
+        ctx.fill();
+    }
     ctx.restore();
 
     // 3. Shooting Logic
