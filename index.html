@@ -122,17 +122,23 @@ html, body {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    // 1. The Alert Logic
     function gameAlert(message) {
-        // 1. Put your text into the custom box
-        document.getElementById('modalContent').innerHTML = message;
-        // 2. Make the box visible
-        document.getElementById('gameModal').style.display = 'block';
+        const modal = document.getElementById('gameModal');
+        const content = document.getElementById('modalContent');
+        if (modal && content) {
+            content.innerHTML = message;
+            modal.style.display = 'block';
+        } else {
+            alert(message);
+        }
     }
 
     function closeModal() {
-        document.getElementById('gameModal').style.display = 'none';
+        const modal = document.getElementById('gameModal');
+        if (modal) modal.style.display = 'none';
     }
-//
+    
     const castaNames = [
         "David Artsy", "Smacken", "Smacky", "A-Bomb", "Dennis The Menace", "Greg Heffley", "Nate Wright", "Kool Kid", "Girl Stick", "Hulk Ninja",
         "Master Stick", "Bee", "Inky", "Lego Spy Girl", "Circle", "Square", "Triangle", "Rectangle", "Lego Jet-Man", "Lego Bubble Boy",
