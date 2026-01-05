@@ -384,6 +384,14 @@ html, body {
                 } else if(en.type.startsWith('obs')) {
                     if(!((en.type === 'obsLow' && playerYOffset < -35) || (en.type === 'obsHigh' && isSliding))) {
                         if(activePower === 'SHIELD') { activePower = null; powerTimer = 0; entities.splice(i, 1); }
+                            
+                        // --- NEW INVINCIBILITY CODE STARTS HERE ---
+                        else if(selectedChar.name === "Unstoppable Metal Beast") {
+                            // Instead of dying, we just remove the obstacle!
+                            entities.splice(i, 1); 
+                        } 
+                        // --- NEW INVINCIBILITY CODE ENDS HERE ---
+                            
                         else { triggerDeath(); }
                     }
                 } else {
