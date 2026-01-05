@@ -122,6 +122,20 @@ html, body {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    function gameAlert(message) {
+        // 1. Put your text into the custom box
+        document.getElementById('modalContent').innerHTML = message;
+        // 2. Make the box visible
+        document.getElementById('gameModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('gameModal').style.display = 'none';
+    }
+    // =========================
+
+    // ... rest of your variables like gameState, score, etc.
+    
     const castaNames = [
         "David Artsy", "Smacken", "Smacky", "A-Bomb", "Dennis The Menace", "Greg Heffley", "Nate Wright", "Kool Kid", "Girl Stick", "Hulk Ninja",
         "Master Stick", "Bee", "Inky", "Lego Spy Girl", "Circle", "Square", "Triangle", "Rectangle", "Lego Jet-Man", "Lego Bubble Boy",
@@ -230,7 +244,7 @@ html, body {
             localStorage.setItem('unlocked_'+char.id, 'true');
             localStorage.setItem('casta_bank', totalCoins);
             openPreviewer(char); initMenu();
-        } else { alert("NOT ENOUGH COINS!"); }
+        } else { gameAlert("NOT ENOUGH COINS!"); }
     }
 
     function closePreviewer() { document.getElementById('previewer').style.display = 'none'; }
@@ -240,7 +254,7 @@ html, body {
         if(code === "CAU75") {
             characters.forEach(c => { c.unlocked = true; localStorage.setItem('unlocked_'+c.id, 'true'); });
             totalCoins += 99999; localStorage.setItem('casta_bank', totalCoins);
-            alert("ALL CHARACTERS UNLOCKED & 99,999 COINS!");
+            gameAlert("ALL CHARACTERS UNLOCKED & 99,999 COINS!");
             initMenu();
         }
     }
@@ -501,7 +515,7 @@ html, body {
             mData.prog = 0;
             localStorage.setItem('casta_level', mData.lvl);
             localStorage.setItem('casta_bank', totalCoins);
-            alert("MISSION COMPLETE!\nReward: 🪙" + reward);
+            gameAlert("MISSION COMPLETE!<br>Reward: 🪙" + reward);
         }
     }, 50);
 
@@ -520,7 +534,7 @@ html, body {
             
             // Show the reward message after a tiny delay so the menu can load
             setTimeout(() => {
-                alert("🎁 DAILY REWARD!\nYou received 🪙1,000 coins!\nCome back tomorrow for more.");
+                gameAlert("🎁 DAILY REWARD!<br>You received 🪙1,000 coins!<br>Come back tomorrow for more.");
                 initMenu(); // Refresh the coin display on the menu
             }, 500);
         }
@@ -657,6 +671,11 @@ function updateVillain(ctx, canvas, visualX, delta) {
         }
     }
 }
+
+<div id="gameModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#222; color:white; padding:25px; border-radius:20px; border:3px solid #FFD700; text-align:center; z-index:10000; width:85%; box-shadow: 0 0 30px rgba(0,0,0,0.8); font-family: sans-serif;">
+    <div id="modalContent" style="font-size: 18px; line-height: 1.5; margin-bottom: 20px;"></div>
+    <button onclick="closeModal()" style="background:#FFD700; color:black; border:none; padding:12px 40px; border-radius:10px; font-weight:bold; font-size: 16px; cursor:pointer;">OK</button>
+</div>
     
 </script>
 </body>
