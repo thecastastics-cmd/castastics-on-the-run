@@ -315,7 +315,7 @@ html, body {
             entities = []; gameState = 'playing';
             if(!isMuted) sounds.bg.play().catch(()=>{});
             lastTime = performance.now(); update();
-        } else { alert("Not enough coins!"); }
+        } else { gameAlert("Not enough coins!"); }
     }
 
     function endGamePermanently() {
