@@ -122,27 +122,6 @@ html, body {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // SAFE ALERT SYSTEM: This prevents the black screen crash
-    function gameAlert(message) {
-        const modal = document.getElementById('gameModal');
-        const content = document.getElementById('modalContent');
-        
-        // The "if" check makes sure the box exists before touching it
-        if (modal && content) {
-            content.innerHTML = message;
-            modal.style.display = 'block';
-        } else {
-            // If the box isn't ready yet, it uses a regular alert
-            // This keeps the game from crashing!
-            alert(message);
-        }
-    }
-
-    function closeModal() {
-        const modal = document.getElementById('gameModal');
-        if (modal) modal.style.display = 'none';
-    }
-
     const castaNames = [
         "David Artsy", "Smacken", "Smacky", "A-Bomb", "Dennis The Menace", "Greg Heffley", "Nate Wright", "Kool Kid", "Girl Stick", "Hulk Ninja",
         "Master Stick", "Bee", "Inky", "Lego Spy Girl", "Circle", "Square", "Triangle", "Rectangle", "Lego Jet-Man", "Lego Bubble Boy",
@@ -251,7 +230,7 @@ html, body {
             localStorage.setItem('unlocked_'+char.id, 'true');
             localStorage.setItem('casta_bank', totalCoins);
             openPreviewer(char); initMenu();
-        } else { gameAlert("NOT ENOUGH COINS!"); }
+        } else { alert("NOT ENOUGH COINS!"); }
     }
 
     function closePreviewer() { document.getElementById('previewer').style.display = 'none'; }
@@ -261,7 +240,7 @@ html, body {
         if(code === "CAU75") {
             characters.forEach(c => { c.unlocked = true; localStorage.setItem('unlocked_'+c.id, 'true'); });
             totalCoins += 99999; localStorage.setItem('casta_bank', totalCoins);
-            gameAlert("ALL CHARACTERS UNLOCKED & 99,999 COINS!");
+            alert("ALL CHARACTERS UNLOCKED & 99,999 COINS!");
             initMenu();
         }
     }
@@ -315,7 +294,7 @@ html, body {
             entities = []; gameState = 'playing';
             if(!isMuted) sounds.bg.play().catch(()=>{});
             lastTime = performance.now(); update();
-        } else { gameAlert("Not enough coins!"); }
+        } else { alert("Not enough coins!"); }
     }
 
     function endGamePermanently() {
@@ -370,7 +349,7 @@ html, body {
         }
         // --- END MULTI-STAGE ROAD SYSTEM ---
 
-        let targetX = currentLane * (canvas.width / 3) + (canvas.width / 6) - 35;
+                let targetX = currentLane * (canvas.width / 3) + (canvas.width / 6) - 35;
         visualX += (targetX - visualX) * 0.15;
         if(playerJumpVal !== 0 || playerYOffset < 0){
             playerYOffset -= playerJumpVal; playerJumpVal -= 1.2;
@@ -522,7 +501,7 @@ html, body {
             mData.prog = 0;
             localStorage.setItem('casta_level', mData.lvl);
             localStorage.setItem('casta_bank', totalCoins);
-            gameAlert("MISSION COMPLETE!<br>Reward: 🪙" + reward);
+            alert("MISSION COMPLETE!\nReward: 🪙" + reward);
         }
     }, 50);
 
@@ -541,7 +520,7 @@ html, body {
             
             // Show the reward message after a tiny delay so the menu can load
             setTimeout(() => {
-                gameAlert("🎁 DAILY REWARD!<br>You received 🪙1,000 coins!<br>Come back tomorrow for more.");
+                alert("🎁 DAILY REWARD!\nYou received 🪙1,000 coins!\nCome back tomorrow for more.");
                 initMenu(); // Refresh the coin display on the menu
             }, 500);
         }
@@ -678,11 +657,6 @@ function updateVillain(ctx, canvas, visualX, delta) {
         }
     }
 }
-
-<div id="gameModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#222; color:white; padding:25px; border-radius:20px; border:3px solid #FFD700; text-align:center; z-index:10000; width:85%; box-shadow: 0 0 30px rgba(0,0,0,0.8); font-family: sans-serif;">
-    <div id="modalContent" style="font-size: 18px; line-height: 1.5; margin-bottom: 20px;"></div>
-    <button onclick="closeModal()" style="background:#FFD700; color:black; border:none; padding:12px 40px; border-radius:10px; font-weight:bold; font-size: 16px; cursor:pointer;">OK</button>
-</div>
     
 </script>
 </body>
