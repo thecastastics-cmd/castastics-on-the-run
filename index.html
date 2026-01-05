@@ -122,14 +122,18 @@ html, body {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // 1. The Alert Logic
+    // SAFE ALERT SYSTEM: This prevents the black screen crash
     function gameAlert(message) {
         const modal = document.getElementById('gameModal');
         const content = document.getElementById('modalContent');
+        
+        // The "if" check makes sure the box exists before touching it
         if (modal && content) {
             content.innerHTML = message;
             modal.style.display = 'block';
         } else {
+            // If the box isn't ready yet, it uses a regular alert
+            // This keeps the game from crashing!
             alert(message);
         }
     }
@@ -138,7 +142,7 @@ html, body {
         const modal = document.getElementById('gameModal');
         if (modal) modal.style.display = 'none';
     }
-    
+
     const castaNames = [
         "David Artsy", "Smacken", "Smacky", "A-Bomb", "Dennis The Menace", "Greg Heffley", "Nate Wright", "Kool Kid", "Girl Stick", "Hulk Ninja",
         "Master Stick", "Bee", "Inky", "Lego Spy Girl", "Circle", "Square", "Triangle", "Rectangle", "Lego Jet-Man", "Lego Bubble Boy",
