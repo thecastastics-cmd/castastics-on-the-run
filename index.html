@@ -176,7 +176,7 @@ html, body {
     sounds.bg.loop = true;
     let isMuted = false;
 
-    let gameState = 'menu', score = 0, coins = 0, lastTime = performance.now();
+    let gameState = 'menu', score = 0, coins = 0, lastTime = 0;
     let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
     let highScore = parseInt(localStorage.getItem('casta_high')) || 0;
     let currentLane = 1, visualX = 0, speed = 7, roadScrollY = 0, entities = [], runCycle = 0;
@@ -327,7 +327,7 @@ html, body {
         if(!isNaN(delta)) {
             let scoreGain = (activePower === 'MULTIPLIER') ? 200 : 100;
             score += scoreGain * delta; runCycle += delta * 5;
-            roadScrollY += speed * (delta * 60); if(roadScrollY >= canvas.height) roadScrollY = 0;
+            roadScrollY += speed; if(roadScrollY >= canvas.height) roadScrollY = 0;
         }
         lastTime = timestamp;
 
@@ -366,7 +366,7 @@ html, body {
         }
 
         entities.forEach((en, i) => {
-            en.y += speed * (delta * 60);
+            en.y += speed;
             if((activePower === 'MAGNET' || (selectedChar.name === "Super Magnet" && selectedChar.unlocked)) && en.type === 'coin') {
                 en.x += (visualX + 15 - en.x) * 0.25;
             }
@@ -434,7 +434,7 @@ html, body {
             notify.innerText = (selectedChar.name === "Super Magnet" && selectedChar.unlocked) ? "MAGNET ALWAYS ON" : ""; 
             notify.style.color = "white";
         }
-        speed += 0.1 * delta;
+        speed += 0.005;
         document.getElementById('coinCount').innerText = coins;
         document.getElementById('scoreDisplay').innerText = Math.floor(score);
 
