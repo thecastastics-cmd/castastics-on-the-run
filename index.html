@@ -179,7 +179,7 @@ html, body {
     let gameState = 'menu', score = 0, coins = 0, lastTime = 0;
     let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
     let highScore = parseInt(localStorage.getItem('casta_high')) || 0;
-    let currentLane = 1, visualX = 0, speed = 8, roadScrollY = 0, entities = [], runCycle = 0;
+    let currentLane = 1, visualX = 0, speed = 7, roadScrollY = 0, entities = [], runCycle = 0;
     let powerTimer = 0, activePower = null, playerYOffset = 0, playerJumpVal = 0, isSliding = false, slideTimer = 0;
     let reviveCost = 5, isPaused = false, currentPreviewingChar = null;
 
@@ -277,7 +277,7 @@ html, body {
     function startGame() {
         document.getElementById('menu').style.display = 'none';
         score = 0; coins = 0; villain.active = false;
-    villain.y = -100; entities = []; currentLane = 1; speed = 8;
+    villain.y = -100; entities = []; currentLane = 1; speed = 7;
         visualX = (canvas.width / 3) + (canvas.width / 6) - 35;
         powerTimer = 0; activePower = null; playerYOffset = 0; reviveCost = 5; isPaused = false;
         lastTime = performance.now();
@@ -327,7 +327,7 @@ html, body {
         if(!isNaN(delta)) {
             let scoreGain = (activePower === 'MULTIPLIER') ? 200 : 100;
             score += scoreGain * delta; runCycle += delta * 5;
-            roadScrollY += speed; if(roadScrollY >= canvas.height) roadScrollY = 0;
+            roadScrollY += speed * (delta * 60); if(roadScrollY >= canvas.height) roadScrollY = 0;
         }
         lastTime = timestamp;
 
@@ -366,7 +366,7 @@ html, body {
         }
 
         entities.forEach((en, i) => {
-            en.y += speed;
+            en.y += speed * (delta * 60);
             if((activePower === 'MAGNET' || (selectedChar.name === "Super Magnet" && selectedChar.unlocked)) && en.type === 'coin') {
                 en.x += (visualX + 15 - en.x) * 0.25;
             }
@@ -434,7 +434,7 @@ html, body {
             notify.innerText = (selectedChar.name === "Super Magnet" && selectedChar.unlocked) ? "MAGNET ALWAYS ON" : ""; 
             notify.style.color = "white";
         }
-        speed += 0.001;
+        speed += 0.1 * delta;
         document.getElementById('coinCount').innerText = coins;
         document.getElementById('scoreDisplay').innerText = Math.floor(score);
 
