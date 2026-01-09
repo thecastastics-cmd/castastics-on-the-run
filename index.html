@@ -176,7 +176,7 @@ html, body {
     sounds.bg.loop = true;
     let isMuted = false;
 
-    let gameState = 'menu', score = 0, coins = 0, lastTime = 0;
+    let gameState = 'menu', score = 0, coins = 0, lastTime = performance.now();
     let totalCoins = parseInt(localStorage.getItem('casta_bank')) || 0;
     let highScore = parseInt(localStorage.getItem('casta_high')) || 0;
     let currentLane = 1, visualX = 0, speed = 7, roadScrollY = 0, entities = [], runCycle = 0;
