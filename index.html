@@ -150,7 +150,18 @@ html, body {
         "Darkness", "Mr. Money Mouse", "Black Marker", "Cover", "Black Cover", "Grandpa Mud-Man", "Ray", "Billy", "Lizzy", "Butterclay",
         "Messi", "Renii", "Black", "Blue", "Energy Pen Ninja", "Air Pen Ninja", "Earth Pen Ninja", "Lightning Pen Ninja", "Ice Pen Ninja", "Fire Pen Ninja",
         "Master Ian", "Dark Vogue", "Rocket Launcher", "Bounce", "Toothbrush", "Toothpaste", "Thirsty", "Brian The Fool", "Stephen Jeffers", "Mcseen Jeffers",
-        "Doctor Deadpool", "Godzilla", "Point", "Oddsketeer Cat", "Gamer"
+        "Doctor Deadpool", "Godzilla", "Point", "Oddsketeer Cat", "Gamer", "Princess Nya", "M&M", "Adesh", "Rigid Frenzy", "Hannah Carlita", "The Balls", "Dusty", "Pengu", "Light-Up Frenzy", "Bonnie", 
+"Roger Trucko", "Pinky", "Dr. Brainy", "Yellow Power Ranger", "Green Army Man", "Mr. Spell", "Evil Santa Bubbly-Head", "Sgt Ronal", "Super X", "Adrien", 
+"Sabrina", "Butterfly", "Jessie", "Kevin Duplop (Labcoat)", "Ezekiel", "Loco", "Kung Fu Bird", "Kevin Duplop", "Evil Klipper", "Hybro", 
+"Silvia Scissors (Red Fit)", "Metal Man", "Master Yen", "White Steele", "Battery", "Bookster", "Pencil Case", "Evil Scissors", "Bryan", "Top", 
+"Uncle Ian", "Point (Casual)", "Penita", "Uncle/Master Ian", "Kiara", "Green Pen", "Super Pen", "Gold Pen", "Super Noobie", "Big Apple", 
+"Carrot", "Belly", "DJ David", "The Artist/David (Civilian)", "X-Ray", "Fred", "Apple", "Crescent", "Evil Artist", "Nehemiah/The Footballer", 
+"MM-2", "Jeremy Johnson", "Master Gabby Charles/Pendi Queen", "Jane Johnson", "Dark Vogue (Pen Army)", "Evil Pen", "Map Pen", "Ezekiel Johnson/Space Pen (Classic)", "Ezekiel Johnson (Casual)", "Jenny Herickson (Princess Fit)", 
+"Oboe", "Cowboy", "Axel", "James the Watch's Father", "Blood Moon", "Flame (Criminal Fit)", "Brockli", "Wrench (Without Suit)", "Nate Skywalker (Armor)", "Star (Exercise Fit)", 
+"Bacon Hair Ryan (Admin)", "Adrien ( The Admin)", "Vanny/SwordsGirl (Classic)", "Ben Nose", "Rocket Launcher (Classic)", "Fluffy Chase", "Danny/The Exhibitor", "Rover", "Stick Boy & Stick Girl", "Adrien", 
+"Mr. Biscuit", "Lady Gaga", "Quelatikan/Speedy", "Whom Whom Head/Whomie (Human)", "John Doe", "The Community", "Guest 666", "Jade/Bug-Girl", "Shirt", "Pants", 
+"Pax", "Frank", "Toodos (Classic)", "Randy the Camera", "Iesha Forde", "Shoe #1", "Shoe #2", "Joey Bear", "Joel Bunny", "Bonnie", 
+"Dark Shadow (Classic)", "Dwayne/Thanos", "Hazel/ZelTiger", "BabyBrian (Alexander)/Sonic Prime", "BabyDavid/ArtistHero", "BabyEmily/SwiftClaw", "Ava/Cat Lady", "Larz/Aviara"
     ];
 
     const assets = { 
@@ -184,7 +195,7 @@ html, body {
     let reviveCost = 5, isPaused = false, currentPreviewingChar = null;
 
     let characters = [];
-    for(let i=1; i<=275; i++){
+    for(let i=1; i<=393; i++){
         characters.push({ 
             id: i, 
             name: castaNames[i-1] || `Casta #${i}`, 
@@ -565,9 +576,9 @@ document.body.appendChild(rUI);
         let rank = "COMMON";
 
         // 4. Rarity Logic
-        if (idx >= 250) { color = "#FFD700"; rank = "LEGENDARY"; } 
-        else if (idx >= 200) { color = "#BF00FF"; rank = "EPIC"; }      
-        else if (idx >= 100) { color = "#00CCFF"; rank = "RARE"; }      
+        if (idx >= 349) { color = "#FFD700"; rank = "LEGENDARY"; } 
+        else if (idx >= 249) { color = "#BF00FF"; rank = "EPIC"; }      
+        else if (idx >= 149) { color = "#00CCFF"; rank = "RARE"; }      
 
         // 5. Update the Screen
 rUI.style.color = color;
