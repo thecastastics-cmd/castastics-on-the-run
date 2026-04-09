@@ -580,6 +580,8 @@ document.body.appendChild(rUI);
         let rank = "COMMON";
 
         // 4. Rarity Logic
+        if (idx >= 393) { color = "#FF00FF"; rank = "MYTHIC"; } 
+        else
         if (idx >= 349) { color = "#FFD700"; rank = "LEGENDARY"; } 
         else if (idx >= 249) { color = "#BF00FF"; rank = "EPIC"; }      
         else if (idx >= 149) { color = "#00CCFF"; rank = "RARE"; }      
