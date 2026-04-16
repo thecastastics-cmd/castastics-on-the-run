@@ -116,6 +116,12 @@ html, body {
 </div>
 
 <button id="muteBtn" onclick="toggleMute()">🔊</button>
+    <div id="liveIntro" style="position: absolute; bottom: 40%; left: 10px; z-index: 100; display: none; align-items: center; pointer-events: none;">
+    <img id="liveCharImg" src="" style="height: 180px; width: auto; object-fit: contain; filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5));">
+    <div style="background: white; color: black; padding: 10px; border-radius: 10px; font-weight: bold; font-size: 12px; max-width: 150px; margin-left: -10px; border: 2px solid #000;">
+        Swipe up to jump, down to slide, left/right to move! Collect coins and powerups! Go!
+    </div>
+    </div>
 <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -294,6 +300,12 @@ html, body {
 
     function startGame() {
         document.getElementById('menu').style.display = 'none';
+        const liveUI = document.getElementById('liveIntro');
+    if(liveUI) {
+        document.getElementById('liveCharImg').src = selectedChar.imgSrc;
+        liveUI.style.display = 'flex';
+        setTimeout(() => { liveUI.style.display = 'none'; }, 10000);
+            }
         score = 0; coins = 0; villain.active = false;
     villain.y = -100; entities = []; currentLane = 1; speed = 7;
         visualX = (canvas.width / 3) + (canvas.width / 6) - 35;
