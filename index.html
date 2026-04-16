@@ -629,7 +629,6 @@ const villain = {
 
 function triggerVillainQuest() {
     if (villain.active) return;
-    showVillainWarning(`images/villain${Math.floor(Math.random() * 3) + 1}.png`);
     villain.img = null; //
     villain.active = true;
     villain.timer = 1000; // 20 seconds roughly (at 50fps)
