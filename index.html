@@ -171,7 +171,7 @@ html, body {
 "Super Paper", "Doctor", "Brian/Bald Eye Patch", "Buzz Leg/Footloose", "Pearl", "Flowish", "Leafy Jr.", "Tulip", "Ava/Cat Lady (Bikini)", "Judah/Jet-Man (Civilian)",
 "Isaiah/Stronge (Civilian)", "Stronge (Green Suit)", "Bubble Man", "Art Girl (Classic)", "Donnie (Klipper)", "Black Perfume's Dad", "Jetta Dél Rio", "Lily (Liliann) Melody", "Matt (Matthew) Adams", "Nate (Nathan) Johnson",
 "The Artist (Tech)", "Ice Stick", "Ezekiel/Lightning Stick", "Hannah (Classic)", "Kenny (Classic)", "Salt", "Milk", "Bowl", "Oil", "Dividen",
-"Ivan/Ice Pen (Classic)", "Super Magnet's Son", "The Artist (Armor)", "Fire Stick", "Earth Stick", "Air Stick", "Energy Stick", "Flame (Classic)", "Art Girl (Classic)", "Wheezy (Sheriff)", "Sulley", "Rex (Classic)", "Guitar", "Monster", "Monstrosity", "Reindeer & Egg", "Covered (Classic)",
+"Ivan/Ice Pen (Classic)", "Super Magnet's Son", "The Artist (Armor)", "Fire Stick", "Earth Stick", "Air Stick", "Energy Stick", "Flame (Classic)", "Art Girl ( Unmasked)", "Wheezy (Sheriff)", "Sulley", "Rex (Classic)", "Guitar", "Monster", "Monstrosity", "Reindeer & Egg", "Covered (Classic)",
 "The Artist (Ninja)", "Goofy (HQ)", "The Artist (Modern)", "Plainty", "Blocky", "Sarge", "Smacky (Old)", "Stephen", "Jocelyn", "Adesh (HQ)",
 "Art", "A-Boy (Classic)", "Hybro's Bros", "White-Off", "Black Widow", "Nick Fury", "Key's Son", "Lock's Son", "Lock (Younger)", "Lock (Old)",
 "Super Paper (Modern)", "Super Magnet (Modern)", "Marty (Black)", "Marty (Younger)", "Bella the Pig (Yellow)", "Joel (Old)"
@@ -700,7 +700,10 @@ function updateVillain(ctx, canvas, visualX, delta) {
         }
     }
 }
-    
+
+
+    // This line does all the work for you
+showVillainWarning(`images/villain${Math.floor(Math.random() * 3) + 1}.png`);
 </script>
 </body>
 </html>
