@@ -474,6 +474,7 @@ html, body {
     }
 
     function triggerDeath() {
+        document.getElementById('liveIntro').style.display = 'none';
         gameState = 'revive'; sounds.bg.pause();
         if(!isMuted) sounds.death.play().catch(()=>{});
         document.getElementById('reviveCostText').innerText = reviveCost;
