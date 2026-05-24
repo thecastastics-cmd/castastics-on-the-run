@@ -248,8 +248,7 @@ html, body {
         const char = currentPreviewingChar;
         if(char.unlocked) {
             selectedChar = char;
-            selectedChar.img = new Image(); 
-            selectedChar.img.src = char.imgSrc; // Preloads the image instantly
+            if(!char.img) { char.img = new Image(); char.img.src = char.imgSrc; }
             closePreviewer(); initMenu();
         } else if(totalCoins >= char.cost) {
             totalCoins -= char.cost; char.unlocked = true;
@@ -447,8 +446,6 @@ html, body {
 
         // Bulletproof Check:
         if(selectedChar.img && selectedChar.img.complete && selectedChar.img.naturalWidth !== 0) {
-            ctx.imageSmoothingEnabled = true;
-ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(selectedChar.img, -35, -50, 70, 100);
         } else {
             ctx.fillStyle = selectedChar.color || 'green';
