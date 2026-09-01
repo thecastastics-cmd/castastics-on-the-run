@@ -174,8 +174,12 @@ html, body {
 "Ivan/Ice Pen (Classic)", "Super Magnet's Son", "The Artist (Armor)", "Fire Stick", "Earth Stick", "Air Stick", "Energy Stick", "Flame (Classic)", "Art Girl (Unmasked)", "Wheezy (Sheriff)", "Sulley", "Rex (Classic)", "Guitar", "Monster", "Monstrosity", "Reindeer & Egg", "Covered (Classic)",
 "The Artist (Ninja)", "Goofy (HQ)", "The Artist (Modern)", "Plainty", "Blocky", "Sarge", "Smacky (Old)", "Stephen", "Jocelyn", "Adesh (HQ)",
 "Art", "A-Boy (Classic)", "Hybro's Bros", "White-Off", "Black Widow", "Nick Fury", "Key's Son", "Lock's Son", "Lock (Younger)", "Lock (Old)",
-"Super Paper (Modern)", "Super Magnet (Modern)", "Marty (Black)", "Marty (Younger)", "Bella the Pig (Yellow)", "Joel (Old)"
-    ];
+"Super Paper (Modern)", "Super Magnet (Modern)", "Marty (Black)", "Marty (Younger)", "Bella the Pig (Yellow)", "Joel (Old)", "Batman Walkie-talkies", "Mike Wazowski", "Mike (Bug Man Suit)", "Clumsy", "Ben 10 (Green Fit)", "Green Lantern", "Ben 10 (White Fit)", "Billy (Modern)", "Bike Rider", "Zipper", 
+"Ezekiel The Last Soldier", "Whistle", "Fidget Spinner", "LEGO Spider-Man", "The Earphones and Plug", "Mr. Fruitó (The Turtle Ninja Brothers)", "Shock", "Shocker's Son", "Mrs. Fruitó (The Turtle Ninja Brothers)", "Shocker", 
+"Ruby", "Sabrina (Adult)", "Keychain", "Cover (Classic)", "Black Cover (Classic)", "Silver Chain (Adult)", "Ice (Classic)", "Quebec", "Pea", "Whimpy", 
+"GG", "Johnny Herickson (Classic)", "Snail", "Slug Man (Unmasked)", "Sanjay", "Ian", "Darker (Classic)", "Finn", "Lizzy", "Maxwell", 
+"Spider Glue (Unmasked)", "DavidTheArtist", "Dog Man", "Iesha/SwiftClaw", "Elijah Samuel", "Elijah/Bubble Boy", "Azariah/Lightning Queen", "Bug-Man", "Isaiah/Stronge", "Emily/Spy Girl", 
+"Glasses", "Mirror" ];
 
     const assets = { 
         road: new Image(), road2: new Image(), road3: new Image(), 
@@ -208,7 +212,7 @@ html, body {
     let reviveCost = 5, isPaused = false, currentPreviewingChar = null;
 
     let characters = [];
-    for(let i=1; i<=476; i++){
+    for(let i=1; i<=528; i++){
         characters.push({ 
             id: i, 
             name: castaNames[i-1] || `Casta #${i}`, 
