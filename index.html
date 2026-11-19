@@ -23,71 +23,26 @@ html, body {
         .secondary-btn { background: #555; color: white; font-size: 16px; padding: 10px 25px; }
         #muteBtn { position: absolute; bottom: 20px; right: 20px; background: #333; color: white; border-radius: 50%; width: 45px; height: 45px; border: none; z-index: 30; }
         #pauseBtn { position: absolute; top: 15px; right: 15px; z-index: 30; background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 15px; border-radius: 5px; pointer-events: auto; }
-        /* FIX - PASTE THIS AT THE VERY BOTTOM OF YOUR <style> */
-#storeBtn {
-  width: 55px !important;
-  height: 55px !important;
-  padding: 0 !important;
-  font-size: 0 !important;
-  min-width: 0 !important;
+#bottomIcons {
   position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
-  background: #ffea00 !important;
-  border: 3px solid #000 !important;
-  border-radius: 50% !important;
+  bottom: 15px !important;
+  left: 12px !important;
+  display: flex !important;
+  gap: 8px !important;
   z-index: 9999 !important;
 }
-#storeBtn img {
-  width: 28px !important;
-  height: 28px !important;
-  display: block !important;
-  margin: auto !important;
-}
-#socialPopup {
-  position: fixed !important;
-  bottom: 85px !important;
-  left: 12px !important;
-  width: 210px !important;
-  max-height: 55vh !important;
-  overflow-y: auto !important;
-  touch-action: pan-y !important;
-  pointer-events: auto !important;
-  background: rgba(0,0,0,0.95) !important;
-  border: 2px solid #00ff00 !important;
-  border-radius: 15px !important;
-  padding: 10px !important;
-  z-index: 10000 !important;
-  display: none;
-  -webkit-overflow-scrolling: touch;
-}
-#socialPopup a {
+#bottomIcons a {
+  width: 44px !important;
+  height: 44px !important;
+  background: #ffea00 !important;
+  border: 2px solid #000 !important;
+  border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: flex-start !important;
-  gap: 8px !important;
-  padding: 8px !important;
-  margin: 5px 0 !important;
-  font-size: 13px !important;
-  background: white !important;
-  color: black !important;
-  text-decoration: none !important;
-  border-radius: 8px !important;
-}
-#socialPopup a img {
-  width: 20px !important;
-  height: 20px !important;
-  flex-shrink: 0 !important;
-}
-#socialPopup .store-link {
-  background: #ffea00 !important;
-  font-size: 14px !important;
-}
-#socialPopup .close-link {
-  background: #555 !important;
-  color: white !important;
   justify-content: center !important;
-                  }
+}
+#bottomIcons a:last-child { background: white !important; }
+#bottomIcons img { width: 22px !important; height: 22px !important; }
     </style>
 </head>
 <body>
@@ -181,43 +136,14 @@ html, body {
 </div>
 
 <button id="muteBtn" onclick="toggleMute()">🔊</button>
-    <!-- STORE + SOCIALS BUTTON - REAL ICONS -->
-<button id="storeBtn" onclick="toggleSocials()">
-  <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/bag-fill.svg" alt="Store">
-</button>
-
-<div id="socialPopup">
-  <div style="color:#00ff00; font-size:16px; margin-bottom:5px;">CASTASTICS ⭐🐾</div>
-
-  <a class="store-link" href="https://shopcastastics.us.ci/" target="_blank">
-    <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/bag-fill.svg" alt=""> VISIT STORE
+<!-- BOTTOM ICONS - STORE + SITE ONLY -->
+<div id="bottomIcons">
+  <a href="https://shopcastastics.us.ci/" target="_blank">
+    <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/bag-fill.svg">
   </a>
-
   <a href="https://castastics.us.ci/" target="_blank">
-    <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/globe.svg" alt=""> Main Site
+    <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/globe.svg">
   </a>
-
-  <a href="https://youtube.com/@davidartsy" target="_blank">
-    <img src="https://cdn.simpleicons.org/youtube/FF0000" alt=""> YouTube
-  </a>
-
-  <a href="https://www.instagram.com/itsdavidartsy" target="_blank">
-    <img src="https://cdn.simpleicons.org/instagram/E4405F" alt=""> Instagram
-  </a>
-
-  <a href="https://www.facebook.com/thedavidartsy/" target="_blank">
-    <img src="https://cdn.simpleicons.org/facebook/1877F2" alt=""> Facebook
-  </a>
-
-  <a href="https://www.tiktok.com/@realdavidartsy/" target="_blank">
-    <img src="https://cdn.simpleicons.org/tiktok/000000" alt=""> TikTok
-  </a>
-
-  <a href="https://m.twitch.tv/davidartsylive/home" target="_blank">
-    <img src="https://cdn.simpleicons.org/twitch/9146FF" alt=""> Twitch
-  </a>
-
-  <a class="close-link" href="#" onclick="toggleSocials(); return false;">CLOSE</a>
 </div>
     <div id="liveIntro" style="position: absolute; bottom: 40%; left: 10px; z-index: 100; display: none; align-items: center; pointer-events: none;">
     <img id="liveCharImg" src="" style="height: 180px; width: auto; object-fit: contain; filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5));">
@@ -810,11 +736,5 @@ function updateVillain(ctx, canvas, visualX, delta) {
 
     
 </script>
-    <script>
-function toggleSocials(){
-  var p = document.getElementById('socialPopup');
-  p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-}
-    </script>
 </body>
 </html>
