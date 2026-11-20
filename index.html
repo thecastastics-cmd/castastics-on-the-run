@@ -323,13 +323,19 @@ soundBtn.onclick = function(e) {
     function closePreviewer() { document.getElementById('previewer').style.display = 'none'; }
 
     function checkCheat() {
-        const code = prompt("ENTER CODE:");
-        if(code === "CAU75") {
-            characters.forEach(c => { c.unlocked = true; localStorage.setItem('unlocked_'+c.id, 'true'); });
-            totalCoins += 99999; localStorage.setItem('casta_bank', totalCoins);
-            showPopup("ALL CHARACTERS UNLOCKED & 99,999 COINS!");
-            initMenu();
-        }
+    document.getElementById('codeInput').value = '';
+    document.getElementById('codePopup').style.display = 'flex';
+}
+
+function submitCheat() {
+    const code = document.getElementById('codeInput').value;
+    document.getElementById('codePopup').style.display = 'none';
+    if(code === "CAU75") {
+        characters.forEach(c => { c.unlocked = true; localStorage.setItem('unlocked_'+c.id, 'true'); });
+        totalCoins += 99999; localStorage.setItem('casta_bank', totalCoins);
+        showPopup("ALL CHARACTERS UNLOCKED & 99,999 COINS!");
+        initMenu();
+    }
     }
 
     function initMenu() {
@@ -779,5 +785,15 @@ function showPopup(msg){
   document.getElementById('myPopup').style.display = 'flex';
 }
 </script>
+
+  <div id="codePopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200000; align-items:center; justify-content:center;">
+  <div style="background:#111; color:white; padding:25px; border-radius:15px; text-align:center; max-width:300px; border:2px solid white;">
+    <div style="font-size:20px; margin-bottom:15px;">ENTER CODE:</div>
+    <input id="codeInput" type="text" style="width:100%; padding:12px; font-size:18px; text-align:center; border-radius:8px; border:none; margin-bottom:15px;">
+    <br>
+    <button onclick="submitCheat()" style="padding:10px 25px; border-radius:8px; border:none; font-size:16px; margin-right:10px;">OK</button>
+    <button onclick="document.getElementById('codePopup').style.display='none'" style="padding:10px 25px; border-radius:8px; border:none; font-size:16px;">CANCEL</button>
+  </div>
+    </div>
 </body>
 </html>
