@@ -317,7 +317,7 @@ soundBtn.onclick = function(e) {
             localStorage.setItem('unlocked_'+char.id, 'true');
             localStorage.setItem('casta_bank', totalCoins);
             openPreviewer(char); initMenu();
-        } else { alert("NOT ENOUGH COINS!"); }
+        } else { showPopup("NOT ENOUGH COINS!"); }
     }
 
     function closePreviewer() { document.getElementById('previewer').style.display = 'none'; }
@@ -327,7 +327,7 @@ soundBtn.onclick = function(e) {
         if(code === "CAU75") {
             characters.forEach(c => { c.unlocked = true; localStorage.setItem('unlocked_'+c.id, 'true'); });
             totalCoins += 99999; localStorage.setItem('casta_bank', totalCoins);
-            alert("ALL CHARACTERS UNLOCKED & 99,999 COINS!");
+            showPopup("ALL CHARACTERS UNLOCKED & 99,999 COINS!");
             initMenu();
         }
     }
@@ -387,7 +387,7 @@ soundBtn.onclick = function(e) {
             entities = []; gameState = 'playing';
             if(!isMuted) sounds.bg.play().catch(()=>{});
             lastTime = performance.now(); update();
-        } else { alert("Not enough coins!"); }
+        } else { showPopup("Not enough coins!"); }
     }
 
     function endGamePermanently() {
@@ -603,7 +603,7 @@ soundBtn.onclick = function(e) {
             mData.prog = 0;
             localStorage.setItem('casta_level', mData.lvl);
             localStorage.setItem('casta_bank', totalCoins);
-            alert("MISSION COMPLETE!\nReward: 🪙" + reward);
+            showPopup("MISSION COMPLETE!\nReward: 🪙" + reward);
             lastTime = performance.now();
         }
     }, 50);
@@ -623,7 +623,7 @@ soundBtn.onclick = function(e) {
             
             // Show the reward message after a tiny delay so the menu can load
             setTimeout(() => {
-                alert("🎁 DAILY REWARD!\nYou received 🪙1,000 coins!\nCome back tomorrow for more.");
+                showPopup("🎁 DAILY REWARD!\nYou received 🪙1,000 coins!\nCome back tomorrow for more.");
                 initMenu(); // Refresh the coin display on the menu
             }, 500);
         }
