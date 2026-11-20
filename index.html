@@ -765,5 +765,19 @@ function updateVillain(ctx, canvas, visualX, delta) {
 
     
 </script>
+    <!-- NICE POPUP - replaces alert() -->
+<div id="myPopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200000; align-items:center; justify-content:center;">
+  <div style="background:#111; color:white; padding:25px; border-radius:15px; text-align:center; max-width:300px; border:2px solid white;">
+    <div id="myPopupText" style="font-size:20px; margin-bottom:20px;">Hello</div>
+    <button onclick="document.getElementById('myPopup').style.display='none'" style="padding:10px 25px; border-radius:8px; border:none; font-size:16px;">OK</button>
+  </div>
+</div>
+
+<script>
+function showPopup(msg){
+  document.getElementById('myPopupText').innerHTML = msg.replace(/\n/g, '<br>');
+  document.getElementById('myPopup').style.display = 'flex';
+}
+</script>
 </body>
 </html>
